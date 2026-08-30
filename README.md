@@ -78,7 +78,8 @@ lands next to the study, investigates the codebase, and writes the study. You ge
 ~/Coding/OSS-study/lance/lance-format/804/
   CONTEXT.md          the study — what the issue is, where the code is, what to decide
   AGENTS.md           the contract the agent followed
-  00_*.py, 01_*.py    runnable probes of today, each ending in what changes
+  00_*.py, 01_*.py    probes of today, each ending in what changes
+  01_*.rs             the same probe in the language the fix lands in, where the API allows
 ```
 
 Studies are filed as `<root>/<repo-name>/<owner>/<issue>/`, so the root stays browsable by

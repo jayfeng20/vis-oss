@@ -1,7 +1,16 @@
 """
 Builds the three datasets 01_flat_search.py queries.
 
+This is the first file, so it carries the environment. Per python/AGENTS.md lance uses
+uv, and there is no venv to activate — that file says in as many words not to rely on an
+activated environment. Once, from the checkout:
+
     cd ~/Coding/lance/python
+    make install        # runs uv sync, which builds the pylance extension; expect it
+                        # to take a while, and do not interrupt it
+
+Then this file, from that same directory:
+
     uv run --frozen python <this file>
 
 Tutorial level: partial — this file is setup, so it is complete. The stub is in 01.
