@@ -173,15 +173,15 @@ pub fn update() -> Result<()> {
     }
 
     println!("installing the latest {repository}");
-    // `--package` is required, not tidiness: the repository also carries the example
+    // Naming the crate is required, not tidiness: the repository also carries the example
     // study's Cargo project, so a bare `cargo install --git` finds two packages and
-    // refuses to choose.
+    // refuses to choose. For a git install the name is positional — `--package` is not
+    // accepted there.
     let status = Command::new("cargo")
         .args([
             "install",
             "--git",
             repository,
-            "--package",
             env!("CARGO_PKG_NAME"),
             "--force",
         ])
