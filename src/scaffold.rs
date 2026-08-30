@@ -82,16 +82,32 @@ pub fn plan(opts: &InitOptions) -> Result<Plan> {
     })
 }
 
-/// What `init` did.
-pub enum Created {
-    /// A new study was written.
-    Study { dir: PathBuf, notes: Vec<String> },
-    /// One was already there, and was left alone.
-    Existing {
-        dir: PathBuf,
-        pinned: Option<String>,
-        head: Option<String>,
-    },
+/// A study `init` wrote.
+pub struct Created {
+    pub dir: PathBuf,
+    pub notes: Vec<String>,
+}
+
+/// A study that was already there.
+pub struct Existing {
+    pub dir: PathBuf,
+    pub pinned: Option<String>,
+    pub head: Option<String>,
+}
+
+/// The study already filed for this issue, if there is one.
+///
+/// Deliberately cheap — one `read_to_string` — because the caller runs it before the
+/// staleness prompt and the issue lookup. Re-running for an issue already studied is a
+/// normal thing to do, usually just to find the directory again, and it should not cost a
+/// network round trip or ask a question first.
+pub fn existing(dir: &Path, source: &Path) -> Option<Existing> {
+    let context = std::fs::read_to_string(dir.join("CONTEXT.md")).ok()?;
+    Some(Existing {
+        pinned: pinned_commit(&context),
+        head: git::head_commit(source),
+        dir: dir.to_path_buf(),
+    })
 }
 
 /// The commit an existing study records, read back out of its header.
@@ -125,11 +141,10 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<Created> {
         }
     };
 
-    // Re-running for an issue already studied is a normal thing to do — usually to find
-    // the study again, or to check whether it has gone stale. It is not an error, and
-    // the existing work is never overwritten.
-    if let Ok(existing) = std::fs::read_to_string(dir.join("CONTEXT.md")) {
-        if opts.redo {
+    // Only reachable with --redo: without it the caller has already returned, having
+    // found the study before paying for anything.
+    if opts.redo {
+        if let Ok(existing) = std::fs::read_to_string(dir.join("CONTEXT.md")) {
             // Move it aside rather than deleting: a study is hours of reading, and the
             // commit it was pinned to names it usefully.
             let stamp = pinned_commit(&existing).map_or_else(
@@ -152,12 +167,6 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<Created> {
                 "archived the previous study to {}",
                 archive.display()
             ));
-        } else {
-            return Ok(Created::Existing {
-                pinned: pinned_commit(&existing),
-                head: git::head_commit(&source),
-                dir,
-            });
         }
     }
     std::fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
@@ -179,7 +188,7 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<Created> {
     std::fs::write(dir.join("CONTEXT.md"), context)?;
     std::fs::write(dir.join("AGENTS.md"), AGENT_CONTRACT)?;
 
-    Ok(Created::Study { dir, notes })
+    Ok(Created { dir, notes })
 }
 
 /// `<root>/<name>/<owner>/<issue>/` — the layout studies are filed under.

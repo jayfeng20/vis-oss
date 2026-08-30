@@ -88,6 +88,18 @@ anything can import it, that belongs in the block too — it is normally the lon
 When the study is done, if actually running something would settle a question, say in one
 line what it would settle and what it would cost, and offer to do it. Never start unasked.
 
+## If the study already exists
+
+`vis-oss` prints `already studied: <dir>` and stops, having written nothing. **Stop too.**
+Do not open the codebase and do not start over: the work is done, and redoing it silently
+throws away a study someone may have already read and corrected, replacing it with a fresh
+set of guesses.
+
+Tell the user where it is and what vis-oss said about the commit — if the checkout has
+moved since, the file references in it may have moved too, and re-reading those is the
+useful thing to offer. `vis-oss <issue> --redo` archives the existing study under its
+pinned commit and starts a new one, but that is the user's call to make, not yours.
+
 ## If the checkout is behind
 
 `vis-oss` will say so and stop. Tell the user, and offer `vis-oss <issue> --sync-upstream`,

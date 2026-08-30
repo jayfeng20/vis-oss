@@ -23,7 +23,7 @@ mod scaffold;
 mod template;
 
 use git::Staleness;
-use scaffold::{Created, InitOptions};
+use scaffold::InitOptions;
 use template::Tutorial;
 
 /// Create a study directory for an open-source issue, for an agent to fill in.
@@ -117,6 +117,16 @@ fn main() -> Result<()> {
     };
 
     let plan = scaffold::plan(&opts)?;
+
+    // Before the staleness prompt and before the issue lookup: an issue already studied
+    // needs neither, and asking about a stale checkout is a question about work that is
+    // not going to happen.
+    if !opts.redo {
+        if let Some(found) = scaffold::existing(&plan.dir, &plan.source) {
+            return report_existing(&found.dir, &found.pinned, &found.head);
+        }
+    }
+
     if let Some(stale) = plan.staleness.as_ref().filter(|s| s.behind > 0) {
         let synced = cli.sync_upstream && sync(stale, &plan.source);
         if !synced && !confirm_stale(stale, &plan.source)? {
@@ -124,10 +134,7 @@ fn main() -> Result<()> {
         }
     }
 
-    let (dir, mut notes) = match scaffold::init(&opts, plan)? {
-        Created::Study { dir, notes } => (dir, notes),
-        Created::Existing { dir, pinned, head } => return report_existing(&dir, &pinned, &head),
-    };
+    let scaffold::Created { dir, mut notes } = scaffold::init(&opts, plan)?;
     for path in command::outdated() {
         notes.push(format!(
             "{} was written by an older vis-oss; run --install-command to refresh it",
@@ -204,7 +211,7 @@ fn report_existing(dir: &Path, pinned: &Option<String>, head: &Option<String>) -
         _ => {}
     }
     println!();
-    println!("nothing was overwritten. Delete the directory to start over.");
+    println!("nothing was overwritten. --redo archives it and starts again.");
     Ok(())
 }
 
