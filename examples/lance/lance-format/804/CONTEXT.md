@@ -3,8 +3,8 @@
 https://github.com/lance-format/lance/issues/804  
 open · opened 2023-04-24 · good first issue · help wanted · A-python · rust
 
-> Studied against `f603c5516b41c3aae4cb0569b4c96a5253078d81` in `~/Coding/lance`.  
-> Examples are at tutorial level **none** — complete and runnable as shipped. See `AGENTS.md`.
+> Studied against `324cedd9dc7add89f54f8ad14abb9c826698eab5` in `~/Coding/lance`.  
+> Examples are at tutorial level **partial** — scaffolding is written; the interesting parts are stubs. See `AGENTS.md`.
 
 > **Written by an agent, and not reviewed.** It is a head start on understanding
 > this issue, not an answer to it. Check any file reference before you rely on it,
@@ -58,7 +58,7 @@ fork itself; everything below it is the brute-force path. This is the simplest p
 warn and the wrong one: it fires unconditionally, which is exactly the annoyance the
 issue names.
 
-**`rust/lance/src/dataset/scanner.rs:6269`** — `fn flat_knn(&self`. Builds the
+**`rust/lance/src/dataset/scanner.rs:6269`** — `fn flat_knn(&self,`. Builds the
 `KNNVectorDistanceExec` node that does the work.
 
 **`rust/lance/src/io/exec/knn.rs:150`** — `pub struct KNNVectorDistanceExec`. The
@@ -67,10 +67,10 @@ case the node inherits its input's partitioning, so `execute()` runs once per pa
 and anything created inside it would warn once per partition.
 
 **`rust/lance/src/io/exec/knn.rs:904`** — `// Empty batches don't have a vector column to
-score`, inside `execute()` just above the per-batch distance stream. The proposed warning
+score`, inside `execute()` (`:869`) just above the per-batch distance stream. The proposed warning
 site: the work is measurable here, unlike at plan time.
 
-**`rust/lance/src/dataset/scanner.rs:5201`** — an existing `log::warn!` for the
+**`rust/lance/src/dataset/scanner.rs:5200`** — an existing `log::warn!` for the
 neighbouring case where a requested metric is incompatible with the index and Lance falls
 back to brute force. Match its phrasing and level.
 
@@ -78,14 +78,14 @@ back to brute force. Match its phrasing and level.
 
 **Flat full-text search already implements this exact feature.**
 
-`rust/lance-index/src/scalar/inverted/index/flat_search.rs:207`
+`rust/lance-index/src/scalar/inverted/index/flat_search.rs:208`
 
 ```rust
 /// If we accumulate this many bytes we warn the user they probably want to use an FTS index instead.
 pub(super) const BYTES_ACCUMULATED_WARNING_THRESHOLD: u64 = 1024 * 1024 * 1024; // 1GB
 ```
 
-and at line 449, inside the per-batch closure:
+and at line 448, inside the per-batch closure:
 
 ```rust
 let bytes_accumulated = bytes_accumulated
@@ -139,9 +139,9 @@ the issue that the FTS warning may be less visible from Python than intended.
 
 ## Examples
 
-Run from `~/Coding/lance/python` in both cases.
-
-Both were run; see the provenance line in each for the machine and the output.
+Run from `~/Coding/lance/python` in both cases. **Neither was run when this study was
+written** — see the provenance line in each for what was checked instead. `01` has one
+stub, `median_ms`, which you write before it will run.
 
 **`00_build_datasets.py`** — writes three datasets: a 2k one where brute force is the
 right call and must stay silent, and two 20k ones identical but for an IVF_PQ index, so
@@ -154,13 +154,15 @@ uv run --frozen python <study>/00_build_datasets.py
 **`01_flat_search.py`** — the probe. Times the same query four ways, asserts which path
 the plan actually took, and shows that nothing reaches stderr. Its comments trace each
 call down to the declaration that does the work, and its `AFTER` block says what changes.
+The timing helper is the stub; the plan-inspection helper and every annotation are
+complete.
 
 ```sh
 LANCE_LOG=warn uv run --frozen python <study>/01_flat_search.py
 ```
 
-It reports `flat / indexed at 20k rows: 0.6x` — the index loses at this size. That is the
-issue's own caveat, measured.
+An earlier run of this study, at these sizes, reported `flat / indexed: 0.6x` — the index
+loses. If you see the same, that is the issue's own caveat showing up in a measurement.
 
 ## How to verify
 
@@ -184,17 +186,22 @@ over 1GB with `LANCE_LOG=warn` to watch what actually lands on stderr. If that i
 is wrong, open question 3 dissolves and the FTS precedent should simply be copied. This is
 the single claim most worth checking before citing it on the issue.
 
-**The crossover point is not known.** Both examples were run (see their provenance lines),
-but only at 20k rows x 128 dims, where the index is *slower* than brute force — 0.6x. So
-the measurement confirms the issue's premise about small datasets and says nothing about
-where a threshold belongs. Somebody needs to run this at 100k, 1M and 10M to find where
-the index starts winning; that number is the one a threshold has to sit above, and it is
-missing.
+**Nothing here was executed.** The examples were written and their APIs checked by
+reading the source at the commit above; no query was run and no dataset was built while
+writing this. Every file reference below and above is a read reference. Treat the numbers
+quoted from an earlier run of this study as history, not as a measurement of the code you
+have.
 
-**The dimension is unrepresentative.** 128 dims was chosen so the example runs in seconds.
-Real embedding workloads are 768-1536, where flat search costs 6-12x more per row and the
-crossover arrives much earlier. Rerun with the dbpedia corpus before trusting any
-threshold derived from these numbers.
+**The crossover point is not known.** The earlier run only covered 20k rows x 128 dims,
+where the index came out *slower* than brute force — 0.6x. That supports the issue's
+premise about small datasets and says nothing about where a threshold belongs. Somebody
+needs to run this at 100k, 1M and 10M to find where the index starts winning; that number
+is the one a threshold has to sit above, and it is missing.
+
+**The dimension is unrepresentative.** 128 dims was chosen so the example is cheap for
+whoever runs it. Real embedding workloads are 768-1536, where flat search costs 6-12x more
+per row and the crossover arrives much earlier. Rerun at a realistic dimension before
+trusting any threshold derived from these numbers.
 
 **The threshold recommendation is a judgement with no data behind it.** Rows × dimensions
 is argued from the cost model, not from measurement, and I did not check whether Lance
@@ -213,7 +220,8 @@ which `CONTRIBUTING.md` points contributors to.
 No API changes. `to_table(nearest=...)` and `LanceDataset.nearest` keep their signatures;
 this is a behaviour change, visible only on stderr.
 
-Running `01_flat_search.py` unchanged, a sufficiently large unindexed query gains one line:
+Running `01_flat_search.py`, once its stub is filled, a sufficiently large unindexed
+query gains one line:
 
 ```
 WARN lance::io::exec::knn: brute-force vector search scored 500000 rows on column
@@ -229,7 +237,7 @@ Precisely:
   precedent does this with `AtomicBool::swap` at
   `rust/lance-index/src/scalar/inverted/index/flat_search.rs:448`.
 - **once for a batch query too.** `nearest` with a 2-D `q` goes through the
-  `is_batch_nearest` path; eight query vectors must not produce eight warnings.
+  `is_batch_nearest` path (the flag is set from `is_batch_nearest_query`, `scanner.rs:1802`); eight query vectors must not produce eight warnings.
 - **silent below the threshold.** The small dataset produces nothing. This is the whole
   difficulty of the issue, and the only part reviewers will scrutinise.
 - **silent when an index served the query**, and — see open question 2 — silent when the

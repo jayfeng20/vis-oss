@@ -92,10 +92,12 @@ naming the function or struct each call reaches and where it is declared, and an
 block saying what would differ once the issue is fixed. They never patch the project.
 
 The agent writes them but never runs them: a first execution costs whatever the project
-charges to build, which is unbounded and is work you repeat anyway on your own tree. It
-verifies by reading the source instead, and each file says which paths it read. They
-arrive one or two stubs short of running — see `--tutorial` — and if executing something
-would settle a question, the agent offers rather than spending your afternoon on it.
+charges to build, which is unbounded and is work you repeat anyway on your own tree. The
+one mechanical check is `cargo check` for Rust, where the compiler catches a moved
+signature cheaply; for Python there is no equivalent worth running, so the check is
+reading the source, and each file says which paths it read. They arrive one or two stubs
+short of running — see `--tutorial` — and if executing something would settle a question,
+the agent offers rather than spending your afternoon on it.
 
 ### Or without an agent, in a terminal
 

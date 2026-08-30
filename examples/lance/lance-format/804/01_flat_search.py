@@ -5,22 +5,20 @@ nothing.
     cd ~/Coding/lance/python
     LANCE_LOG=warn uv run --frozen python <this file>
 
-Tutorial level: none — this file is complete. Run 00_build_datasets.py first.
+Tutorial level: partial — median_ms is yours to write. Run 00_build_datasets.py first.
 
-Verified: run 2026-08-30 against lance 12.0.0-beta.5 (checkout f603c551), 20k rows x 128
-dims, all assertions passing and stderr empty throughout:
+Not run — Python, so there is nothing to compile. APIs read against lance 324cedd9d:
+to_table at python/python/lance/dataset.py:1559, scanner at :1182, explain_plan at :640,
+take at :2228. The branches named below come from reading Scanner::vector_search,
+rust/lance/src/dataset/scanner.rs:5075. Nothing here asserts on a duration, because the
+numbers are whatever your machine does.
 
-    small (2k, no index)                   4.7 ms   plan=flat
-    large (20k, no index)                 14.6 ms   plan=flat
-    large (20k, indexed)                  24.7 ms   plan=ANN
-    large (20k, use_index=False)          14.3 ms   plan=flat
-    flat / indexed at 20k rows: 0.6x
+An earlier run of this study, at these sizes, found the index *slower* than the flat scan
+— roughly 0.6x. If you see that too it is not a bug: IVF probing costs more than 20k
+distance computations. That is the issue's premise, and it is why the issue asks for a
+threshold rather than a flag.
 
-Read that ratio again: at this size the index is *slower* than scanning everything. IVF
-probing costs more than 20k distance computations. That is the issue's premise, measured
-— which is why it asks for a threshold rather than a flag.
-
-LANCE_LOG is read by init_logging, declared python/src/lib.rs:169. It sets the env_logger
+LANCE_LOG is read by init_logging, declared python/src/lib.rs:177. It sets the env_logger
 level for Rust log records, which go to stderr. Keep it on, so that the absence of a
 warning is something you observed rather than assumed.
 """
@@ -46,28 +44,33 @@ def open_dataset(name: str) -> lance.LanceDataset:
 
 
 def median_ms(dataset: lance.LanceDataset, query: np.ndarray, *, use_index: bool) -> float:
-    """Median of REPEATS runs. The first pays for opening files and warming page cache,
-    and reporting that number is how imaginary regressions get filed."""
-    timings = []
-    for _ in range(REPEATS):
-        start = time.perf_counter()
-        dataset.to_table(
-            nearest={"column": "vector", "q": query, "k": K, "use_index": use_index}
-        )
-        # -> LanceDataset.to_table, python/python/lance/dataset.py:1486
-        # -> Scanner::vector_search, rust/lance/src/dataset/scanner.rs:5075
-        #    reads q.use_index at :5086 and looks for an index covering the column.
-        #    Finding none, it falls through to :5305, `// No index found. use flat
-        #    search.`, then Scanner::flat_knn at :6269 builds the scoring node.
-        # -> KNNVectorDistanceExec, declared rust/lance/src/io/exec/knn.rs:150.
-        #    execute() at :869 streams every batch through compute_distance; the
-        #    per-batch loop starts at :904. This is the O(rows x dim) work.
-        #
-        #    With an index the same call diverges at :5305 into ANNIvfPartitionExec
-        #    (knn.rs:1157) and ANNIvfSubIndexExec (knn.rs:1374), which probe a few IVF
-        #    partitions instead of scanning everything.
-        timings.append((time.perf_counter() - start) * 1000)
-    return statistics.median(timings)
+    """Median wall time of one nearest-neighbour query, in milliseconds.
+
+    Call dataset.to_table(nearest={"column": "vector", "q": query, "k": K,
+    "use_index": use_index}) REPEATS times around time.perf_counter(), and return
+    statistics.median of the millisecond timings. Median rather than min or mean: the
+    first call pays for opening files and warming the page cache, and reporting that
+    number is how imaginary regressions get filed.
+
+    That to_table call is the whole point of this file, so it is worth knowing where it
+    goes:
+      -> LanceDataset.to_table, python/python/lance/dataset.py:1559
+      -> Scanner::vector_search, rust/lance/src/dataset/scanner.rs:5075
+         reads q.use_index at :5086 and looks for an index covering the column.
+         Finding none, it falls through to :5305, `// No index found. use flat
+         search.`, then Scanner::flat_knn at :6269 builds the scoring node.
+      -> KNNVectorDistanceExec, declared rust/lance/src/io/exec/knn.rs:150.
+         execute() at :869 streams every batch through the distance computation; the
+         per-batch loop starts at :904. This is the O(rows x dim) work.
+
+         With an index the same call diverges at :5305 into ANNIvfPartitionExec
+         (knn.rs:1164) and ANNIvfSubIndexExec (knn.rs:1381), which probe a few IVF
+         partitions instead of scanning everything.
+    """
+    raise NotImplementedError(
+        "time REPEATS runs of to_table(nearest=...) and return the median in ms; "
+        "the first run pays for page-cache warmup"
+    )
 
 
 def uses_ann(dataset: lance.LanceDataset, query: np.ndarray, *, use_index: bool) -> bool:
@@ -75,7 +78,8 @@ def uses_ann(dataset: lance.LanceDataset, query: np.ndarray, *, use_index: bool)
     plan = dataset.scanner(
         nearest={"column": "vector", "q": query, "k": K, "use_index": use_index}
     ).explain_plan(verbose=True)
-    # The Rust test at rust/lance/src/dataset/scanner.rs:9873 asserts the same way.
+    # The Rust tests assert on this same string: rust/lance/src/dataset/scanner.rs:9363
+    # for the ANN path, :9872 for the flat one.
     return "ANNSubIndex" in plan
 
 
@@ -99,13 +103,14 @@ def main() -> None:
         path = "ANN" if uses_ann(dataset, query, use_index=use_index) else "flat"
         print(f"  {label:32} {elapsed:7.1f} ms   plan={path}")
 
+    # Which plan was chosen is structural: it holds on any machine, at any size.
     assert not uses_ann(noindex, query, use_index=True), "expected the flat path"
     assert uses_ann(indexed, query, use_index=True), "expected the ANN path"
     assert not uses_ann(indexed, query, use_index=False), "use_index=False must be flat"
 
     flat = median_ms(noindex, query, use_index=True)
     ann = median_ms(indexed, query, use_index=True)
-    print(f"\n  flat / indexed at 20k rows: {flat / ann:.1f}x")
+    print(f"\n  flat / indexed at {noindex.count_rows()} rows: {flat / ann:.1f}x")
     print("  nothing was written to stderr: the slow path is silent")
 
 
@@ -114,8 +119,8 @@ if __name__ == "__main__":
 
 # ---- AFTER ----
 #
-# This file does not change. One thing does: the large unindexed case gains a line on
-# stderr, once per query.
+# This file does not change. One thing does: a sufficiently large unindexed query gains a
+# line on stderr, once per query.
 #
 #   WARN lance::io::exec::knn: brute-force vector search scored 20000 rows on column
 #   "vector"; consider creating a vector index on this column
@@ -126,7 +131,7 @@ if __name__ == "__main__":
 # precedent latches with AtomicBool::swap at
 # rust/lance-index/src/scalar/inverted/index/flat_search.rs:448.
 #
-# At the 20k measured above, the large dataset should ALSO stay silent: brute force is
+# At the sizes above, the large dataset should probably ALSO stay silent: brute force is
 # winning there, and warning would be wrong. Whatever threshold is chosen has to sit above
 # the crossover, which this file does not find — see CONTEXT.md, What I could not verify.
 # Timings do not change; this issue adds a message, not a fast path.
