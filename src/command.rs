@@ -35,7 +35,7 @@ The command prints the directory it made. In it:
 Investigate from the repository you are in, not from the study directory — you need to
 search and read the project's source. Write into the study directory by absolute path.
 
-## Make the examples actually run
+## Make the examples actually run, and keep them fast
 
 They default to complete, runnable code, and running them is the point: an example you
 executed carries real output in its provenance line, and one you only wrote is a guess
@@ -46,11 +46,21 @@ about an API. So, for each example:
    one Cargo project per repository, one level above the issue directory: create
    `Cargo.toml` there with a path dependency on the checkout if it does not exist, and
    add a `[[bin]]` for your example if it does. `AGENTS.md` shows the layout.
-2. Run it. Fix what breaks.
+2. Run it once. Fix what breaks; shrink what is slow.
 3. Put the real command and the real output in the file's provenance line.
 
 If you genuinely cannot run one — it needs a large download, credentials, or hardware you
 do not have — say so in that line and say why. Never leave provenance out.
+
+Write the smallest input that reaches the code path: a thousand rows takes the same branch
+as a million, and the branch is the thing being taught. The whole set of examples should
+run in about two minutes. Do not go hunting for a data size or a parameter that makes a
+measurement come out the way you expected — no throwaway probe scripts, no trained indexes,
+no large generated datasets. If the first honest run surprises you, that is a finding:
+write it down. `AGENTS.md` has the rule in full.
+
+When the study is done, if a longer run would genuinely add something — a measurement that
+needs real scale — say so in one line and offer to do it. Never start one unasked.
 
 ## If the checkout is behind
 

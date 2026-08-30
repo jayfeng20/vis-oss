@@ -91,6 +91,10 @@ The examples are the point: runnable probes of what the code does today, with co
 naming the function or struct each call reaches and where it is declared, and an `AFTER`
 block saying what would differ once the issue is fixed. They never patch the project.
 
+They are deliberately small — the smallest input that reaches the code path, so the whole
+study runs in a couple of minutes rather than spending them on a dataset nobody reads. A
+measurement that needs real scale is offered to you at the end, not run behind your back.
+
 ### Or without an agent, in a terminal
 
 ```sh
