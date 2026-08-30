@@ -17,6 +17,7 @@ use anyhow::Result;
 use clap::Parser;
 
 mod command;
+mod config;
 mod git;
 mod scaffold;
 mod template;
@@ -39,11 +40,11 @@ use template::Tutorial;
 )]
 struct Cli {
     /// Issue number.
-    #[arg(required_unless_present = "install_command")]
+    #[arg(required_unless_present_any = ["install_command", "set_root"])]
     number: Option<u64>,
-    /// Base directory to file the study under. Defaults to `~/vis-oss`.
+    /// Root to file this study under, overriding the saved root for this run.
     ///
-    /// The study lands at `<base>/<owner>/<name>/<number>/` either way.
+    /// The study lands at `<root>/<name>/<owner>/<number>/` either way.
     base: Option<PathBuf>,
     /// `owner/name`. Inferred from the git remotes when omitted.
     #[arg(long)]
@@ -57,10 +58,22 @@ struct Cli {
     /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
     #[arg(long)]
     install_command: bool,
+    /// Remember where studies are filed, for every later run, then exit.
+    #[arg(long, value_name = "PATH")]
+    set_root: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+    if let Some(path) = cli.set_root {
+        let file = config::save(&path)?;
+        println!(
+            "studies will be filed under {}",
+            config::root(None)?.display()
+        );
+        println!("remembered in {}", file.display());
+        return Ok(());
+    }
     if cli.install_command {
         return install_command();
     }

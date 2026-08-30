@@ -27,10 +27,12 @@ to.
 
 ## Use
 
-Once, to install the `/vis-oss` command into whichever agent CLIs you have:
+Once, to install the `/vis-oss` command into whichever agent CLIs you have, and to
+choose where studies are kept:
 
 ```sh
 vis-oss --install-command
+vis-oss --set-root ~/Coding/OSS-study     # optional; defaults to ~/vis-oss
 ```
 
 Then, from inside your clone of the project, with the number of the issue you want to
@@ -43,13 +45,16 @@ study:
 Your agent creates the study and fills it in. You get:
 
 ```
-~/vis-oss/lance-format/lance/804/
+~/Coding/OSS-study/lance/lance-format/804/
   CONTEXT.md    the study — what the issue is, where the code is, what to decide
   AGENTS.md     the contract the agent followed
-  examples/     today's behaviour, and the behaviour you are aiming for
+  examples/     runnable probes of today's behaviour, each ending in what changes
 ```
 
-[Here is a finished one](examples/lance-format/lance/804/CONTEXT.md), for
+Studies are filed as `<root>/<repo-name>/<owner>/<issue>/`, so the root is browsable by
+project.
+
+[Here is a finished one](examples/lance/lance-format/804/CONTEXT.md), for
 [an open issue in lance](https://github.com/lance-format/lance/issues/804).
 
 The examples are the point: runnable probes of what the code does today, with comments
@@ -65,7 +70,8 @@ asks before writing, because a study describes code at one commit.
 
 | | |
 |---|---|
-| `vis-oss 804 ~/notes` | Create the study in a different directory. e.g. `<owner>/<name>/<issue>` remains as prefix. e.g. `~/notes/<owner>/<name>/<issue>/` |
+| `vis-oss 804 ~/notes` | Use a different root for one run. The `<repo-name>/<owner>/<issue>/` layout still applies, so this writes `~/notes/lance/lance-format/804/` |
+| `--set-root <path>` | Remember a root for every later run, and exit |
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
 | `--tutorial full\|partial\|none` | How much of the examples you write yourself. `full` (default) is `TODO`s, `partial` leaves stubs, `none` is complete code |

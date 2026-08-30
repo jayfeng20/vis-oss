@@ -13,21 +13,11 @@ use serde_json::Value;
 use crate::git::{self, Staleness};
 use crate::template::{self, Tutorial, AGENT_CONTRACT};
 
-/// Default base directory for studies, under the user's home.
-///
-/// Outside any repository on purpose. A study written inside the project it describes
-/// shows up in `git status` and can be committed by accident into the very pull request
-/// the contributor is preparing.
-pub const DEFAULT_BASE: &str = "vis-oss";
-
 pub struct InitOptions {
     pub number: u64,
     /// `owner/name`. Inferred from the git remotes when absent.
     pub repo: Option<String>,
-    /// Base directory to file the study under. Defaults to `~/vis-oss`.
-    ///
-    /// The study lands at `<base>/<owner>/<name>/<number>/` either way, so pointing
-    /// several issues at one base keeps them organised rather than colliding.
+    /// Root to file the study under. Overrides the saved root for this run only.
     pub base: Option<PathBuf>,
     /// How much of the examples the reader writes themselves.
     pub tutorial: Tutorial,
@@ -70,12 +60,7 @@ pub fn plan(opts: &InitOptions) -> Result<Plan> {
         slug
     };
 
-    let base = match opts.base.clone() {
-        Some(b) => b,
-        None => home()
-            .context("could not determine the home directory — pass a base directory")?
-            .join(DEFAULT_BASE),
-    };
+    let base = crate::config::root(opts.base.clone())?;
     let dir = study_path(&base, &repo, opts.number);
     if git::is_inside_repo(&dir) {
         notes.push(format!(
@@ -144,24 +129,15 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<(PathBuf, Vec<String>)> {
     Ok((dir, notes))
 }
 
-/// `<base>/<owner>/<name>/<issue>/` — the layout studies are filed under.
+/// `<root>/<name>/<owner>/<issue>/` — the layout studies are filed under.
 ///
-/// Keyed by the full `owner/name` rather than the bare repository name so that two
-/// projects that happen to share a name do not collide.
-fn study_path(base: &Path, repo: &str, number: u64) -> PathBuf {
-    let mut path = base.to_path_buf();
-    for part in repo.split('/').filter(|p| !p.is_empty()) {
-        path.push(part);
-    }
-    path.push(number.to_string());
-    path
-}
-
-fn home() -> Option<PathBuf> {
-    std::env::var_os("HOME")
-        .or_else(|| std::env::var_os("USERPROFILE"))
-        .map(PathBuf::from)
-        .filter(|p| !p.as_os_str().is_empty())
+/// Repository name first, because that is what you recognise when browsing the root;
+/// the owner disambiguates two projects that share a name.
+fn study_path(root: &Path, repo: &str, number: u64) -> PathBuf {
+    let mut parts = repo.split('/').filter(|p| !p.is_empty());
+    let owner = parts.next().unwrap_or_default();
+    let name = parts.next().unwrap_or(owner);
+    root.join(name).join(owner).join(number.to_string())
 }
 
 struct Issue {
