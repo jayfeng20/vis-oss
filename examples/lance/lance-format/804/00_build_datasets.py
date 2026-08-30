@@ -15,7 +15,7 @@ Then this file, from that same directory:
 
 Tutorial level: partial — this file is setup, so it is complete. The stub is in 01.
 
-Not run — Python, so there is nothing to compile. APIs read against lance 324cedd9d:
+Not run, not compiled. APIs read against lance 324cedd9d:
 write_dataset at python/python/lance/dataset.py:7719, LanceDataset.create_index at
 :4124, list_indices at :1122. The row counts are the ones an earlier run of this study
 confirmed will train an IVF_PQ index; expect the third write to take most of the time.

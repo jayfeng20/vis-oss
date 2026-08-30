@@ -92,13 +92,12 @@ The examples are the point: runnable probes of what the code does today, with co
 naming the function or struct each call reaches and where it is declared, and an `AFTER`
 block saying what would differ once the issue is fixed. They never patch the project.
 
-The agent writes them but never runs them: a first execution costs whatever the project
-charges to build, which is unbounded and is work you repeat anyway on your own tree. The
-one mechanical check is `cargo check` for Rust, where the compiler catches a moved
-signature cheaply; for Python there is no equivalent worth running, so the check is
-reading the source, and each file says which paths it read. They arrive one or two stubs
-short of running — see `--tutorial` — and if executing something would settle a question,
-the agent offers rather than spending your afternoon on it.
+The agent writes them but never runs or compiles them: both cost whatever the project
+charges to build — for a Rust workspace, its entire dependency graph — and that is work you
+repeat anyway on your own tree. The check is reading the source, and each file records which
+paths it read and at which commit, and says plainly that it is unexecuted. They arrive one
+or two stubs short of running — see `--tutorial` — and if executing something would settle a
+question, the agent offers rather than spending your afternoon on it.
 
 ### Or without an agent, in a terminal
 

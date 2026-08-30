@@ -7,7 +7,7 @@ nothing.
 
 Tutorial level: partial — median_ms is yours to write. Run 00_build_datasets.py first.
 
-Not run — Python, so there is nothing to compile. APIs read against lance 324cedd9d:
+Not run, not compiled. APIs read against lance 324cedd9d:
 to_table at python/python/lance/dataset.py:1559, scanner at :1182, explain_plan at :640,
 take at :2228. The branches named below come from reading Scanner::vector_search,
 rust/lance/src/dataset/scanner.rs:5075. Nothing here asserts on a duration, because the

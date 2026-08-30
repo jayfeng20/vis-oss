@@ -106,24 +106,29 @@ One setup file serves both where the data is the same on disk, which it usually 
 it in whichever language is cheaper for the reader to get running, and say in the other
 probe that it depends on it.
 
-### The only check is that it compiles
+### You write the code; you do not execute it
 
-**You do not run these files.** Getting one to execute means first paying whatever the
-project charges for a first execution — a binding compiled from source, a dataset written
-before anything can be queried, a service brought up. That cost has nothing to do with how
-small your example is, there is no way to predict it from outside, and it is work the
-reader repeats anyway on their own tree.
+**Nothing here is run, and nothing is compiled.** Executing a file means paying whatever
+the project charges for a first execution, and compiling a Rust one against a large
+workspace means building its whole dependency graph — for a project pulling in Arrow and
+DataFusion that is around nine hundred crates before the compiler reaches your thirty
+lines. Neither cost has anything to do with how small your example is, and both are work
+the reader does anyway on their own tree.
 
-So there is one mechanical check, and only where the language offers one cheaply:
+So the check is reading: open the file, find the symbol, confirm the signature. Name the
+paths you read in the provenance line, so the reader can see what was confirmed and what
+was taken on trust.
 
-| language | check | why |
-|---|---|---|
-| **Rust** | `cargo check` the shared study project | The compiler catches the error class that matters here: a signature that moved, a type that changed, a trait no longer in scope. The cost is bounded — no data written, no index trained — and once the shared project has compiled once, later issues are seconds. `todo!()` type-checks, so a `partial` file still passes. |
-| **everything interpreted** | none | There is nothing useful in between. A syntax check catches what you would not get wrong anyway, and anything stronger means importing the project, which is the cost above. |
+What you owe instead is a file that matches its **tutorial level** — complete at `none`,
+scaffolded with stubs at `partial`, `TODO`s at `full`. The level is the contract with the
+reader about how finished this is, and it is the honest lever you do have. It is also what
+bounds the risk: `partial`, the default, ships the part you can stand behind from reading
+and leaves the rest marked, so an uncompiled file is not pretending to be a working one.
 
-Beyond that the check is reading: open the file, find the symbol, confirm the signature.
-Name the paths you read in the provenance line, so the reader can see what was confirmed
-and what was taken on trust.
+Be straight about it in the provenance line. A Rust example nobody compiled will sometimes
+not compile — a trait bound, a generic parameter, an async runtime detail — and the
+reader's first `cargo check` is where that surfaces. Saying so costs a sentence and saves
+them the assumption that it built clean.
 
 Do not go further. No running an example to see whether it works, no throwaway scripts
 hunting for a data size or a parameter that makes a measurement come out, and nothing the
@@ -172,9 +177,9 @@ In order:
    the exact command to run it and the directory to run it from; and the tutorial level.
    The lowest-numbered file in each language also says how to get an environment where
    that command works — see below.
-2. **A provenance line** — what was checked and what was not. For Rust, that it compiles
-   and against which commit; otherwise, the paths you read to confirm the APIs it calls.
-   Keep it short. It exists so the reader knows which parts to distrust.
+2. **A provenance line** — that it was neither run nor compiled, and the paths you read to
+   confirm the APIs it calls, with the commit you read them at. Keep it short. It exists so
+   the reader knows which parts to distrust.
 3. **The body**, annotated as below.
 4. **An `AFTER` block** — probes only. Setup files do not need one; nothing about
    building the inputs changes.
@@ -189,7 +194,7 @@ says nothing.
 
 Tutorial level: partial — the timing helper is yours to write.
 
-Not run — Python, so nothing to compile. APIs read against lance f603c551:
+Not run, not compiled. APIs read against lance f603c551:
 write_dataset and create_index in python/python/lance/dataset.py, LANCE_LOG handling
 in python/src/lib.rs:169. The branch it takes comes from reading Scanner::vector_search;
 the timings are whatever your machine does.
@@ -256,10 +261,10 @@ The contributor gets a real binary compiled against their own working tree — s
 make the change, re-running the probe shows the `AFTER` block coming true. That is a
 working acceptance check that never touches the project's source.
 
-Run `cargo check` on that project once your file is in it, and fix what it reports — this
-is the one check you owe a Rust example, and the first one against a big workspace is the
-only slow part of writing a study. Say in the docstring that the reader's first build is
-slow too, so a long compile is not read as a hang.
+You write that `Cargo.toml` and the `[[bin]]` entry; you do not build them. Say in the
+docstring that the reader's first build is slow — it is compiling the project's whole
+dependency graph — so a long compile is not read as a hang, and say that the file is
+uncompiled so a first error is expected rather than alarming.
 Do not reach for `cargo -Zscript`: it is nightly-only. If what you need to observe is not
 reachable from outside the crate, that is a signal the example belongs in the observation
 language instead, not that you should reach into internals.
@@ -322,7 +327,7 @@ scaffolding you can stand behind from reading; leave the rest as stubs.
 |---|---|
 | `full` | comments and `TODO`s. The reader writes every line. |
 | `partial` | scaffolding, with the parts worth thinking about left as stubs. |
-| `none` | complete, runnable code. |
+| `none` | complete code, written to run — but still never executed, so the claim rests on reading alone. |
 
 Mark a stub the way the language does, and say what goes there — never leave a silent
 gap:
