@@ -139,9 +139,15 @@ the issue that the FTS warning may be less visible from Python than intended.
 
 ## Examples
 
-Run from `~/Coding/lance/python` in both cases. **Neither was run when this study was
-written** — see the provenance line in each for what was checked instead. `01` has one
-stub, `median_ms`, which you write before it will run.
+**All three are drafts** — none was run, and the Rust one was never compiled. See the
+provenance line in each for what was checked by reading instead, and expect the Rust file
+to want a fix or two on first `cargo check`. Each probe has one stub, `median_ms`, which
+you write before it will run.
+
+The probe exists twice: `01_flat_search.py` is what a user meets, `01_flat_search.rs` is
+the same probe in the language the behaviour is implemented in. The Rust one runs against
+your own working tree with no extension to rebuild, so re-running it after your change is
+the acceptance check for the `AFTER` block.
 
 **`00_build_datasets.py`** — writes three datasets: a 2k one where brute force is the
 right call and must stay silent, and two 20k ones identical but for an IVF_PQ index, so
@@ -163,6 +169,15 @@ LANCE_LOG=warn uv run --frozen python <study>/01_flat_search.py
 
 An earlier run of this study, at these sizes, reported `flat / indexed: 0.6x` — the index
 loses. If you see the same, that is the issue's own caveat showing up in a measurement.
+
+**`01_flat_search.rs`** — the same probe from Rust. It is a `[[bin]]` in the shared study
+project one level up (`../Cargo.toml`), whose `lance` path dependency you point at your
+own checkout. The first build compiles lance's whole dependency graph, so expect minutes.
+
+```sh
+cd <study root>/lance/lance-format
+RUST_LOG=warn cargo run --bin 804_flat_search
+```
 
 ## How to verify
 
