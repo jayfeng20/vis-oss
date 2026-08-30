@@ -20,17 +20,18 @@ for.
                                   │
                     vis-oss init 804
                                   │
-              vis-oss-scratch/804/ ── study.json   the structured explanation
-                                  ├── examples/    today's behaviour, and the target
-                                  └── README.md
+   ~/vis-oss/lance-format/lance/804/ ── study.json   the structured explanation
+                                     ├── examples/    today's behaviour, and the target
+                                     └── README.md
                                   │
                     an agent investigates and fills it in
                                   │
                     vis-oss render ──► you understand the issue
 ```
 
-The directory lives inside the repo, next to the code it describes, and vis-oss adds it
-to your clone's `info/exclude` so it can never end up in the PR you send upstream.
+Studies are filed **outside** the project, under `~/vis-oss/<owner>/<name>/<issue>/`.
+Keeping them out of the tree means a study can never turn up in `git status` or get
+swept into the PR you are preparing — the risk is removed rather than defended against.
 
 ## Install
 
@@ -47,18 +48,25 @@ Needs `git`, and `gh` (authenticated) for `init`.
 From inside your clone of the project you want to contribute to:
 
 ```sh
-vis-oss init 804                 # creates vis-oss-scratch/804/
-vis-oss render vis-oss-scratch/804
+vis-oss init 804                              # -> ~/vis-oss/<owner>/<name>/804/
+vis-oss render ~/vis-oss/lance-format/lance/804
 ```
 
 `init` reads the repository, root and commit from git. It **prefers the `upstream`
 remote over `origin`**, because on a fork `origin` is your copy and the issue lives
-upstream. Pass a directory to put the study somewhere else:
-`vis-oss init 804 ~/notes/lance-804`.
+upstream.
+
+Pass a base directory to file studies somewhere else — the
+`<owner>/<name>/<issue>/` layout is appended either way, so one base can hold every
+issue you have ever looked at:
+
+```sh
+vis-oss init 804 ~/notes        # -> ~/notes/lance-format/lance/804/
+```
 
 | Command | |
 |---|---|
-| `init <number> [dir]` | Create the study. `--repo`, `--source`, `--solution`, `--yes` |
+| `init <number> [base]` | Create the study. `--repo`, `--source`, `--solution`, `--yes` |
 | `render [path]` | Read it. `--format term\|markdown`, `--section`, `--width`, `--color` |
 | `validate [path]` | Is it complete? Do its code references still resolve? |
 | `repair [path]` | Fix references the code has moved out from under. `--dry-run` |
@@ -96,7 +104,7 @@ For a study you keep working from over days, `validate` re-resolves its code ref
 and `repair` corrects the ones that merely moved:
 
 ```
-$ vis-oss repair vis-oss-scratch/804
+$ vis-oss repair ~/vis-oss/lance-format/lance/804
 entry_points rust/lance/src/dataset/scanner.rs: 4226 -> 5305
 ```
 

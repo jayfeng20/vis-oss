@@ -4,7 +4,7 @@
 //! well-formed but empty [`Study`]. No judgement is applied, because judgement is the
 //! agent's job and this tool must stay testable and deterministic.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{bail, Context, Result};
@@ -13,19 +13,44 @@ use serde_json::Value;
 use crate::git::{self, Staleness};
 use crate::study::{Extra, Issue, Mode, Pin, Study, SCHEMA_VERSION};
 
-/// Directory, relative to the repository root, that study directories live in.
+/// Default base directory for studies, under the user's home.
 ///
-/// Inside the repo so a study sits next to the code it describes, and so paths in it
-/// are short. Excluded via `.git/info/exclude` rather than `.gitignore`, because a
-/// contributor's scratch work must not appear in the diff they send upstream.
-pub const SCRATCH_DIR: &str = "vis-oss-scratch";
+/// Outside any repository on purpose. A study written inside the project it describes
+/// shows up in `git status` and can be committed by accident into the very PR the
+/// contributor is preparing; keeping it out of the tree removes that risk entirely
+/// rather than defending against it.
+pub const DEFAULT_BASE: &str = "vis-oss";
+
+/// `<base>/<owner>/<name>/<issue>/` — the layout studies are filed under.
+///
+/// Keyed by the full `owner/name` rather than the bare repository name so that two
+/// projects that happen to share a name do not collide.
+fn study_path(base: &Path, repo: &str, number: u64) -> PathBuf {
+    let mut path = base.to_path_buf();
+    for part in repo.split('/').filter(|p| !p.is_empty()) {
+        path.push(part);
+    }
+    path.push(number.to_string());
+    path
+}
+
+/// The user's home directory, from the environment.
+fn home() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+        .filter(|p| !p.as_os_str().is_empty())
+}
 
 pub struct InitOptions {
     pub number: u64,
     /// `owner/name`. Inferred from the git remotes when absent.
     pub repo: Option<String>,
-    /// Where to write. Defaults to `<repo root>/vis-oss-scratch/<number>/`.
-    pub out: Option<PathBuf>,
+    /// Base directory to file the study under. Defaults to `~/vis-oss`.
+    ///
+    /// The study itself always lands at `<base>/<owner>/<name>/<number>/`, so pointing
+    /// several issues at one base keeps them organised rather than colliding.
+    pub base: Option<PathBuf>,
     pub mode: Mode,
     /// Checkout the anchors will refer to. Defaults to the enclosing repository.
     pub source: Option<PathBuf>,
@@ -72,10 +97,19 @@ pub fn plan(opts: &InitOptions) -> Result<Plan> {
         slug
     };
 
-    let dir = opts
-        .out
-        .clone()
-        .unwrap_or_else(|| source.join(SCRATCH_DIR).join(opts.number.to_string()));
+    let base = match opts.base.clone() {
+        Some(b) => b,
+        None => home()
+            .context("could not determine the home directory — pass a base directory")?
+            .join(DEFAULT_BASE),
+    };
+    let dir = study_path(&base, &repo, opts.number);
+    if git::is_inside_repo(&dir) {
+        notes.push(format!(
+            "{} is inside a git repository — it will show up in git status",
+            dir.display()
+        ));
+    }
 
     Ok(Plan {
         source,
@@ -144,21 +178,6 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<InitOutcome> {
         serde_json::to_string_pretty(&study)? + "\n",
     )?;
     std::fs::write(dir.join("README.md"), readme(&study))?;
-
-    // Only meaningful when the study lives inside the repository it describes.
-    if dir.starts_with(&source) {
-        match git::ensure_ignored(&source, &dir.join("study.json")) {
-            git::Excluded::Added(pattern) => notes.push(format!(
-                "excluded {pattern} locally (info/exclude, not .gitignore) — verified ignored"
-            )),
-            git::Excluded::Already => {}
-            git::Excluded::Failed(reason) => notes.push(format!(
-                "WARNING: {} is NOT ignored by git ({reason}). \
-                 Exclude it yourself before you commit.",
-                dir.display()
-            )),
-        }
-    }
 
     Ok(InitOutcome { dir, study, notes })
 }

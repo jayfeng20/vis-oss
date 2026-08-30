@@ -6,14 +6,19 @@ machine-readable version; this document explains the parts a schema cannot expre
 
 ## The shape
 
-One directory per issue. `vis-oss init` creates it; the agent fills it in.
+One directory per issue, filed outside the project at
+`~/vis-oss/<owner>/<name>/<issue>/`. `vis-oss init` creates it; the agent fills it in.
 
 ```
-study-804/
+~/vis-oss/lance-format/lance/804/
   study.json     the contract — everything else is derived from it
   examples/      runnable files: what happens today, what should happen after
   README.md      what this directory is
 ```
+
+Studies live outside the repository on purpose, so one can never be committed into the
+pull request the contributor is preparing. Anchor paths are therefore always relative
+to `pin.root`, never to the study directory.
 
 Write files. Never pass a study as a shell argument — agent-generated shell with a
 multi-kilobyte quoted JSON payload is a reliability problem, not an interface.

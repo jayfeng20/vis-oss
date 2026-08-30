@@ -42,8 +42,10 @@ enum Command {
     Init {
         /// Issue number.
         number: u64,
-        /// Directory to create. Defaults to `<repo root>/vis-oss-scratch/<number>/`.
-        dir: Option<PathBuf>,
+        /// Base directory to file the study under. Defaults to `~/vis-oss`.
+        ///
+        /// The study lands at `<base>/<owner>/<name>/<number>/` either way.
+        base: Option<PathBuf>,
         /// `owner/name`. Inferred from the git remotes when omitted.
         #[arg(long)]
         repo: Option<String>,
@@ -109,13 +111,13 @@ fn main() -> Result<()> {
     match Cli::parse().command {
         Command::Init {
             number,
-            dir,
+            base,
             repo,
             source,
             solution,
             tutorial: _,
             yes,
-        } => cmd_init(number, dir, repo, source, solution, yes),
+        } => cmd_init(number, base, repo, source, solution, yes),
         Command::Validate { path } => cmd_validate(&path),
         Command::Render {
             path,
@@ -137,7 +139,7 @@ fn main() -> Result<()> {
 
 fn cmd_init(
     number: u64,
-    dir: Option<PathBuf>,
+    base: Option<PathBuf>,
     repo: Option<String>,
     source: Option<PathBuf>,
     solution: bool,
@@ -146,7 +148,7 @@ fn cmd_init(
     let opts = InitOptions {
         number,
         repo,
-        out: dir,
+        base,
         mode: if solution {
             Mode::Solution
         } else {
