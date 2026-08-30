@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "issue": {
+    "repo": "lance-format/lance",
+    "number": 804,
+    "title": "Display warning if the index is not built for a vector column during query",
+    "url": "https://github.com/lance-format/lance/issues/804",
+    "state": "OPEN",
+    "labels": [
+      "good first issue",
+      "help wanted",
+      "A-python",
+      "rust"
+    ],
+    "created_at": "2023-04-24",
+    "body": "When user does a ANN query, show warnings if the index was not built for the column, for potentially slow query speed. \r\n\r\nHowever, doing so blindly makes it really annoying for smaller datasets that really don't need an ANN index. One alternative could be that during the KNN (flat search) execution, if the runtime exceed a certain threshold to print the warning.",
+    "claims": [
+      {
+        "user": "gprasadsowmya",
+        "at": "2026-06-10",
+        "url": "https://github.com/lance-format/lance/issues/804#issuecomment-4673001120",
+        "opened_pr": false
+      }
+    ]
+  },
+  "pin": {
+    "root": "/Users/jayfeng/Coding/lance",
+    "commit": "f603c5516b41c3aae4cb0569b4c96a5253078d81"
+  },
+  "mode": "tutorial",
+  "summary": "A vector similarity search against a column with no vector index does not fail \u2014 Lance silently falls back to brute force: read every vector, compute the distance to the query, sort, take the top k. Correct, but O(rows x dimensions) per query. The issue asks Lance to tell the user. The hard part is the author's own caveat: warning on every unindexed query is intolerable on small datasets, where brute force is the right choice.",
+  "current_behavior": "Scanner::vector_search finds no usable index and takes the flat branch, building a KNNVectorDistanceExec over a full scan. Nothing is logged at any level. A 1k-row query and a 100M-row query are indistinguishable from the outside; the only signal is wall time.",
+  "desired_behavior": "A vector query that actually does an expensive brute-force scan emits one warning naming the column and suggesting an index. A query over a small dataset, a query served by an index, and a query that explicitly passed use_index=False stay silent. At most one warning per query, not one per RecordBatch or per DataFusion partition.",
+  "entry_points": [
+    {
+      "path": "rust/lance/src/dataset/scanner.rs",
+      "line": 5075,
+      "symbol": "async fn vector_search(",
+      "role": "The whole decision. Loads indices, decides whether any covers the queried column, and branches."
+    },
+    {
+      "path": "rust/lance/src/dataset/scanner.rs",
+      "line": 5305,
+      "symbol": "// No index found. use flat search.",
+      "role": "The fork itself. Everything below this comment is the brute-force path. The simplest place to warn, and the wrong one: it fires unconditionally, which is exactly the annoyance the issue names."
+    },
+    {
+      "path": "rust/lance/src/dataset/scanner.rs",
+      "line": 6269,
+      "symbol": "fn flat_knn(&self",
+      "role": "Builds the KNNVectorDistanceExec node that does the brute-force work."
+    },
+    {
+      "path": "rust/lance/src/io/exec/knn.rs",
+      "line": 150,
+      "symbol": "pub struct KNNVectorDistanceExec",
+      "role": "The execution node. A counter and a warning latch belong here as fields, not as locals in execute()."
+    },
+    {
+      "path": "rust/lance/src/io/exec/knn.rs",
+      "line": 904,
+      "symbol": "// Empty batches don't have a vector column to score",
+      "role": "Inside execute(), just above the per-batch distance stream. The proposed warning site: the work is measurable here, unlike at plan time."
+    },
+    {
+      "path": "rust/lance/src/dataset/scanner.rs",
+      "line": 5201,
+      "symbol": "falling back to brute-force search",
+      "role": "An existing log::warn! for a neighbouring case (requested metric incompatible with the index). Match this phrasing and level."
+    }
+  ],
+  "prior_art": [
+    {
+      "path": "rust/lance-index/src/scalar/inverted/index/flat_search.rs",
+      "line": 208,
+      "symbol": "BYTES_ACCUMULATED_WARNING_THRESHOLD: u64",
+      "role": "The threshold constant for the FTS version of this exact feature, with a doc comment explaining what it measures. 1GB."
+    },
+    {
+      "path": "rust/lance-index/src/scalar/inverted/index/flat_search.rs",
+      "line": 449,
+      "symbol": "Consider using an FTS index instead.",
+      "role": "THE precedent. Flat full-text search already warns 'consider using an index', threshold-triggered and latched once per query via AtomicBool::swap. This issue is the same feature for the vector path; the repo has effectively already chosen threshold-over-blind."
+    },
+    {
+      "path": "python/src/tracing.rs",
+      "line": 250,
+      "symbol": "fn on_event",
+      "role": "Forwards tracing events into `log` at the global LANCE_TRACING level rather than the event's own. So tracing::warn! reaches a Python user at INFO, reformatted, while log::warn! arrives at WARN. Decides which macro to use."
+    },
+    {
+      "path": "python/python/tests/test_log.py",
+      "line": 85,
+      "symbol": "def test_lance_log_file(",
+      "role": "How Rust log output is actually tested from Python: subprocess + LANCE_LOG + read stderr. caplog cannot see it, because env_logger writes to stderr and bypasses Python's logging."
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Should the threshold measure elapsed time, bytes scanned, or rows scanned?",
+      "why_it_matters": "Elapsed time is what a user actually feels, but it makes behaviour machine-dependent and the test flaky under CI load. Bytes and rows are deterministic and reproducible.",
+      "options": [
+        "elapsed wall-clock time, as the issue text suggests",
+        "accumulated bytes, as the FTS precedent chose",
+        "rows x dimensions, the quantity that actually drives the cost"
+      ],
+      "recommendation": "Follow the FTS precedent and use a deterministic size measure. rows x dimensions is the honest cost model for vector distance, and unlike bytes it does not vary with how the column is encoded."
+    },
+    {
+      "question": "Should an explicit use_index=False stay silent?",
+      "why_it_matters": "It is a deliberate opt-out rather than a missing index, so warning is arguably noise. But it is also the flag used to measure recall against brute force, where the reminder may be welcome.",
+      "options": [
+        "silent \u2014 the user already said what they wanted",
+        "warn anyway \u2014 the cost is real either way"
+      ],
+      "recommendation": "Silent. A user who typed use_index=False knows they are doing a brute-force search."
+    },
+    {
+      "question": "log::warn! or tracing::warn!?",
+      "why_it_matters": "python/src/tracing.rs re-emits tracing events through `log` at the LANCE_TRACING level, not the event's own, so tracing::warn! surfaces to a Python user at INFO with a mangled format. log::warn! arrives at WARN. The tree is roughly 92 log::warn! to 6 tracing::warn!.",
+      "options": [
+        "log::warn!, matching the neighbouring fallback warning in scanner.rs",
+        "tracing::warn!, matching the FTS precedent"
+      ],
+      "recommendation": "log::warn!. Worth raising on the issue that the FTS warning may be less visible from Python than intended."
+    }
+  ],
+  "examples": [
+    {
+      "file": "examples/00_corpus.py",
+      "stage": "current",
+      "title": "Build the corpora the other two examples query",
+      "shows": "A tiny dataset where brute force is correct and must stay silent, and a large one where it is not. Offers a real 1536-dim OpenAI embedding corpus as well as a synthetic fallback.",
+      "run": "cd ~/Coding/lance/python && uv run python ../../vis-oss/examples/study-804/examples/00_corpus.py --scale small"
+    },
+    {
+      "file": "examples/01_current.py",
+      "stage": "current",
+      "title": "Today: brute force is silent at every size",
+      "shows": "The same query against indexed and unindexed copies, timed, with explain_plan proving which path ran \u2014 and no warning on stderr at any size. This is the 'before'.",
+      "run": "cd ~/Coding/lance/python && LANCE_LOG=warn uv run python ../../vis-oss/examples/study-804/examples/01_current.py"
+    },
+    {
+      "file": "examples/02_proposed.py",
+      "stage": "proposed",
+      "title": "After: one warning, only when the scan was actually expensive",
+      "shows": "The acceptance criteria as executable checks \u2014 large unindexed warns exactly once; small, indexed, and use_index=False stay silent. Fails until you implement the change, which is the point.",
+      "run": "cd ~/Coding/lance/python && uv run python ../../vis-oss/examples/study-804/examples/02_proposed.py"
+    }
+  ],
+  "verify": [
+    "cargo check --workspace --tests --benches",
+    "cargo test -p lance knn",
+    "cargo clippy --all --tests --benches -- -D warnings",
+    "cd python && make build && uv run pytest python/tests/test_log.py -x"
+  ]
+}

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: fmt / build / clippy / test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup component add rustfmt clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Build
+        run: cargo build --workspace --all-targets
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets
+
+      - name: Test
+        run: cargo test --workspace
+
+      - name: The JSON Schema must be emittable
+        run: cargo run -q -p vis-oss -- schema > /dev/null
+
+      # The shipped example anchors point into a different repository, so only its
+      # structure can be checked here — `render` exercises parsing end to end.
+      - name: The shipped example must parse and render
+        run: cargo run -q -p vis-oss -- render examples/study-804 --no-check > /dev/null
