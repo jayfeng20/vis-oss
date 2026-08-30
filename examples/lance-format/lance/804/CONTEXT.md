@@ -40,20 +40,6 @@ Nothing is logged, at any level. A 1k-row query and a 100M-row query are
 indistinguishable from outside; the only signal is wall time. The same is true when the
 user passes `use_index=False` against a column that *does* have an index.
 
-## What should happen
-
-A vector query that actually performs an expensive brute-force scan emits **one** warning
-naming the column and suggesting an index.
-
-Silent in all of these:
-
-- the dataset is small enough that brute force was the right call
-- an index served the query
-- the caller passed `use_index=False` (see open question 2)
-
-"One" means once per query — not once per `RecordBatch`, and not once per DataFusion
-partition. Both are easy to get wrong; see the note under *Where the code is*.
-
 ## Where the code is
 
 Read in this order.
@@ -148,31 +134,25 @@ the issue that the FTS warning may be less visible from Python than intended.
 
 ## Examples
 
-Run from `~/Coding/lance/python` in every case.
+Run from `~/Coding/lance/python` in both cases.
 
-**`examples/00_corpus.py`** — builds the corpora the other two need: one small enough that
-brute force is correct and must stay silent, one large enough that it is not. Offers real
-1536-dim OpenAI embeddings as well as a synthetic fallback.
+**`examples/00_corpus.py`** — builds the corpora the probe needs: one small enough that
+brute force is the right call and must stay silent, one large enough that it is not.
+Offers real 1536-dim OpenAI embeddings via lance's own
+`benchmarks/dbpedia-openai/datagen.py`, with a synthetic fallback.
 
 ```sh
 uv run python <study>/examples/00_corpus.py --scale small
 uv run python <study>/examples/00_corpus.py --scale large --real
 ```
 
-**`examples/01_current.py`** — *before*. Times the same query against indexed and
+**`examples/01_flat_search.py`** — the probe. Times the same query against indexed and
 unindexed copies of the same data, proves which path ran with `explain_plan`, and shows
-nothing is emitted on stderr at any size.
+that nothing reaches stderr at any size. Its comments trace each call down to the
+declaration that does the work, and its `AFTER` block says what changes.
 
 ```sh
-LANCE_LOG=warn uv run python <study>/examples/01_current.py
-```
-
-**`examples/02_proposed.py`** — *after*. The acceptance criteria as executable checks:
-large-unindexed warns exactly once; small, indexed, and `use_index=False` stay silent.
-Fails today, which is the point.
-
-```sh
-uv run python <study>/examples/02_proposed.py
+LANCE_LOG=warn uv run python <study>/examples/01_flat_search.py
 ```
 
 ## How to verify
@@ -199,10 +179,10 @@ the single claim most worth checking before citing it on the issue.
 
 **No timings were measured.** The premise that brute force is dramatically slower at scale
 is standard and near-certain, but the ratio that belongs in a PR description is not in this
-study, because no large corpus was ever built. `examples/01_current.py` is written to
+study, because no large corpus was ever built. `examples/01_flat_search.py` is written to
 produce it; nobody has run it.
 
-**None of the three example files has been executed.** They are written against APIs I
+**Neither example file has been executed.** They are written against APIs I
 read in the source (`nearest`, `explain_plan`, `create_index`, `list_indices`) and against
 lance's own `benchmarks/dbpedia-openai/datagen.py`, but the scripts themselves are
 unrun — expect to fix small things.
@@ -218,3 +198,35 @@ asking on the issue rather than deciding in a PR.
 **Not checked:** whether anyone has attempted this before in a closed PR, and whether the
 maintainers have opinions recorded somewhere other than the issue — Discord, for instance,
 which `CONTRIBUTING.md` points contributors to.
+
+## After — what the issue asks for
+
+No API changes. `to_table(nearest=...)` and `LanceDataset.nearest` keep their signatures;
+this is a behaviour change, visible only on stderr.
+
+Running `examples/01_flat_search.py` unchanged, the large unindexed query gains one line:
+
+```
+WARN lance::io::exec::knn: brute-force vector search scored 500000 rows on column
+"vector"; consider creating a vector index on this column
+```
+
+Precisely:
+
+- **exactly once per query.** Not per `RecordBatch`, and not per DataFusion partition —
+  `KNNVectorDistanceExec` (declared `rust/lance/src/io/exec/knn.rs:150`) inherits its
+  input's partitioning in the non-batch case, so `execute()` at `:869` runs once per
+  partition. The counter and latch belong on the struct, not inside `execute()`. The FTS
+  precedent does this with `AtomicBool::swap` at
+  `rust/lance-index/src/scalar/inverted/index/flat_search.rs:448`.
+- **once for a batch query too.** `nearest` with a 2-D `q` goes through the
+  `is_batch_nearest` path; eight query vectors must not produce eight warnings.
+- **silent below the threshold.** The small corpus produces nothing. This is the whole
+  difficulty of the issue, and the only part reviewers will scrutinise.
+- **silent when an index served the query**, and — see open question 2 — silent when the
+  caller passed `use_index=False`.
+- **emitted with `log::warn!`,** so it arrives at a Python user as WARN rather than being
+  re-levelled through `on_event` (`python/src/tracing.rs:250`). See *What I could not
+  verify*.
+
+Timings do not change. This issue adds a message, not a fast path.

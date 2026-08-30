@@ -7,6 +7,35 @@
 /// The agent contract, compiled in so a study directory is self-contained.
 pub const AGENT_CONTRACT: &str = include_str!("../docs/agent-contract.md");
 
+/// How much of an example the reader is expected to write.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum Tutorial {
+    /// Comments and `TODO`s only. The reader writes every line.
+    Full,
+    /// Scaffolding is present; the parts worth thinking about are left as stubs.
+    Partial,
+    /// Complete, runnable code.
+    None,
+}
+
+impl Tutorial {
+    pub fn label(self) -> &'static str {
+        match self {
+            Tutorial::Full => "full",
+            Tutorial::Partial => "partial",
+            Tutorial::None => "none",
+        }
+    }
+
+    fn describes(self) -> &'static str {
+        match self {
+            Tutorial::Full => "every line is yours to write, from `TODO`s",
+            Tutorial::Partial => "scaffolding is written; the interesting parts are stubs",
+            Tutorial::None => "complete and runnable as shipped",
+        }
+    }
+}
+
 pub struct Context<'a> {
     pub repo: &'a str,
     pub number: u64,
@@ -18,7 +47,7 @@ pub struct Context<'a> {
     pub body: &'a str,
     pub source: &'a str,
     pub commit: &'a str,
-    pub tutorial: bool,
+    pub tutorial: Tutorial,
 }
 
 /// The skeleton of a study.
@@ -39,7 +68,8 @@ pub fn context_md(c: &Context) -> String {
     .flatten()
     .collect::<Vec<_>>()
     .join(" · ");
-    let mode = if c.tutorial { "tutorial" } else { "solution" };
+    let mode = c.tutorial.label();
+    let mode_describes = c.tutorial.describes();
     let commit = if c.commit.is_empty() {
         "(unknown)"
     } else {
@@ -58,7 +88,7 @@ pub fn context_md(c: &Context) -> String {
          {meta}{labels}\n\
          \n\
          > Studied against `{commit}` in `{source}`.  \n\
-         > Examples are in **{mode}** mode. See `AGENTS.md` for what that means.\n\
+         > Examples are at tutorial level **{mode}** — {mode_describes}. See `AGENTS.md`.\n\
          \n\
          > **Written by an agent, and not reviewed.** It is a head start on understanding\n\
          > this issue, not an answer to it. Check any file reference before you rely on it,\n\
@@ -80,10 +110,6 @@ pub fn context_md(c: &Context) -> String {
          ## What happens today\n\
          \n\
          <!-- The current behaviour, traced through real code. Name functions and files. -->\n\
-         \n\
-         ## What should happen\n\
-         \n\
-         <!-- Precise enough to test. -->\n\
          \n\
          ## Where the code is\n\
          \n\
@@ -111,7 +137,14 @@ pub fn context_md(c: &Context) -> String {
          \n\
          <!-- Claims above that rest on inference rather than something you read, code you\n\
               could not find, and questions to put to the maintainers. An empty section is a\n\
-              claim that everything above is solid. -->\n",
+              claim that everything above is solid. -->\n\
+         \n\
+         ## After — what the issue asks for\n\
+         \n\
+         <!-- What is different once this is fixed, seen from outside: an API that changes\n\
+              shape, or the same calls behaving differently — a warning appears, a write\n\
+              gets faster. Use the same file:line annotations as the examples. Describe\n\
+              the target; do not write the patch. -->\n",
         repo = c.repo,
         number = c.number,
         title = c.title,
@@ -121,6 +154,7 @@ pub fn context_md(c: &Context) -> String {
         commit = commit,
         source = c.source,
         mode = mode,
+        mode_describes = mode_describes,
         body = body,
     )
 }
