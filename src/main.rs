@@ -23,7 +23,7 @@ mod scaffold;
 mod template;
 
 use git::Staleness;
-use scaffold::InitOptions;
+use scaffold::{Created, InitOptions};
 use template::Tutorial;
 
 /// Create a study directory for an open-source issue, for an agent to fill in.
@@ -101,7 +101,10 @@ fn main() -> Result<()> {
         }
     }
 
-    let (dir, mut notes) = scaffold::init(&opts, plan)?;
+    let (dir, mut notes) = match scaffold::init(&opts, plan)? {
+        Created::Study { dir, notes } => (dir, notes),
+        Created::Existing { dir, pinned, head } => return report_existing(&dir, &pinned, &head),
+    };
     for path in command::outdated() {
         notes.push(format!(
             "{} was written by an older vis-oss; run --install-command to refresh it",
@@ -137,6 +140,27 @@ fn install_command() -> Result<()> {
     }
     println!();
     println!("now: /vis-oss 804 in your agent, from inside the project's clone");
+    Ok(())
+}
+
+/// Point at a study that already exists, and say whether the code has moved under it.
+fn report_existing(dir: &Path, pinned: &Option<String>, head: &Option<String>) -> Result<()> {
+    println!("already studied: {}", dir.display());
+    let short = |c: &String| c.chars().take(9).collect::<String>();
+    match (pinned, head) {
+        (Some(p), Some(h)) if !h.starts_with(p.as_str()) && !p.starts_with(h.as_str()) => {
+            println!(
+                "  written against {}, checkout is now at {}",
+                short(p),
+                short(h)
+            );
+            println!("  its file references may have moved; re-read before relying on them");
+        }
+        (Some(p), _) => println!("  written against {}, which is what you have", short(p)),
+        _ => {}
+    }
+    println!();
+    println!("nothing was overwritten. Delete the directory to start over.");
     Ok(())
 }
 
