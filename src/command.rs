@@ -35,32 +35,31 @@ The command prints the directory it made. In it:
 Investigate from the repository you are in, not from the study directory — you need to
 search and read the project's source. Write into the study directory by absolute path.
 
-## Make the examples actually run, and keep them fast
+## Do not run the examples
 
-They default to complete, runnable code, and running them is the point: an example you
-executed carries real output in its provenance line, and one you only wrote is a guess
-about an API. So, for each example:
+You write them; the reader runs them. Getting one to execute means first paying whatever
+the project charges for a first execution — a `cargo build` across a big workspace, a
+binding compiled from source, a dataset written before anything can be queried — and that
+cost is unpredictable and unrelated to how small your example is. So:
 
-1. Set up whatever it needs to run. For an interpreted binding, use the project's own
-   tooling (`uv run`, `poetry run`) — nothing to create. For Rust, the study root holds
-   one Cargo project per repository, one level above the issue directory: create
-   `Cargo.toml` there with a path dependency on the checkout if it does not exist, and
-   add a `[[bin]]` for your example if it does. `AGENTS.md` shows the layout.
-2. Run it once. Fix what breaks; shrink what is slow.
-3. Put the real command and the real output in the file's provenance line.
+- **Do not run an example**, or a cut-down version of one, to check that it works.
+- **Do not write throwaway scripts** hunting for a data size or parameter that makes a
+  measurement come out the way you expected.
+- **Do not build a trained index, a large generated dataset, or anything else the project
+  would call a benchmark.**
 
-If you genuinely cannot run one — it needs a large download, credentials, or hardware you
-do not have — say so in that line and say why. Never leave provenance out.
+Your check is reading. Open the file, find the symbol, confirm the signature — an API you
+read is as real as one you called. Then say where you looked, in each file's provenance
+line: real paths and real line numbers, never just a claim that you were careful.
 
-Write the smallest input that reaches the code path: a thousand rows takes the same branch
-as a million, and the branch is the thing being taught. The whole set of examples should
-run in about two minutes. Do not go hunting for a data size or a parameter that makes a
-measurement come out the way you expected — no throwaway probe scripts, no trained indexes,
-no large generated datasets. If the first honest run surprises you, that is a finding:
-write it down. `AGENTS.md` has the rule in full.
+Give each example what it needs to be run by someone else: the exact command and directory,
+the project's own tooling (`uv run`, `poetry run`), and for Rust the shared Cargo project
+one level above the issue directory, with a `[[bin]]` for your file. `AGENTS.md` has the
+layout. Write the smallest input that reaches the code path — a thousand rows takes the
+same branch as a million.
 
-When the study is done, if a longer run would genuinely add something — a measurement that
-needs real scale — say so in one line and offer to do it. Never start one unasked.
+When the study is done, if actually running something would settle a question, say in one
+line what it would settle and what it would cost, and offer to do it. Never start unasked.
 
 ## If the checkout is behind
 
