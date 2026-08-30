@@ -1,1 +1,8 @@
 /target
+
+# The study Cargo project is per-machine: its `lance` path dependency points at the
+# reader's own checkout, and a second package in this tree makes `cargo install --git`
+# ambiguous. The example ships the code files; AGENTS.md shows the manifest to write.
+examples/**/Cargo.toml
+examples/**/Cargo.lock
+examples/**/target/

@@ -5,9 +5,10 @@
 //! once you change `KNNVectorDistanceExec` and re-run it, the `AFTER` block below is a
 //! working acceptance check with no extension to rebuild in between.
 //!
-//! First, an environment. This file is a `[[bin]]` in the study project one level up, not
-//! in the issue directory. Edit the `lance` path in that `Cargo.toml` to point at your own
-//! checkout, then:
+//! First, an environment. This file is a `[[bin]]` in a Cargo project one level up, at the
+//! repository level of the study root — not in the issue directory, and not shipped here,
+//! because its `lance` path dependency has to point at *your* checkout. `AGENTS.md` has the
+//! manifest to write; it is a dozen lines and one `[[bin]]` per example. Once it exists:
 //!
 //!     cd <study root>/lance/lance-format     # the directory holding Cargo.toml
 //!     RUST_LOG=warn cargo run --bin 804_flat_search
