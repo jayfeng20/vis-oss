@@ -57,10 +57,7 @@ vis-oss repair   study-804       # the code moved; fix the line numbers
 ```
 
 `init` infers the repository from your git remotes and **prefers `upstream` over
-`origin`** — on a fork, `origin` is your copy and the issues live upstream. It also
-scans the issue for people who said they would take it and checks whether they ever
-opened a PR, because a months-old claim with nothing behind it means the issue is
-effectively free.
+`origin`** — on a fork, `origin` is your copy and the issues live upstream.
 
 | Command | |
 |---|---|

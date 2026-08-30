@@ -96,13 +96,6 @@ machine-dependent and tests flaky; the FTS precedent chose bytes."* is.
 Do not manufacture these. A study with no genuine open questions should have an empty
 list, and that is a useful signal in itself.
 
-## Claims
-
-`vis-oss init` scans issue comments for people who said they would work on it, and
-checks whether they ever opened a PR. A months-old claim with no PR behind it means
-the issue is effectively free; a recent claim with an open PR means find another issue.
-Do not delete these entries — the reader needs to decide, not be decided for.
-
 ## Pin honestly
 
 `pin.commit` must be the commit the anchors were actually resolved against. If you

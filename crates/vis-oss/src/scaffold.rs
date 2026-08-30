@@ -11,28 +11,7 @@ use anyhow::{bail, Context, Result};
 use serde_json::Value;
 
 use crate::anchor;
-use crate::study::{Claim, Extra, Issue, Mode, Pin, Study, SCHEMA_VERSION};
-
-/// Phrases that, in an issue comment, mean "I intend to do this".
-///
-/// Deliberately loose: a false positive costs one line of output, while a missed claim
-/// means duplicating someone's work.
-const CLAIM_PHRASES: &[&str] = &[
-    "working on",
-    "work on this",
-    "i'll take",
-    "ill take",
-    "assign it to me",
-    "assign this to me",
-    "assign me",
-    "pick this up",
-    "picking this up",
-    "like to try",
-    "let me try",
-    "i can try",
-    "submit a pr",
-    "working towards a pr",
-];
+use crate::study::{Extra, Issue, Mode, Pin, Study, SCHEMA_VERSION};
 
 pub struct InitOptions {
     pub number: u64,
@@ -88,15 +67,6 @@ pub fn init(opts: &InitOptions) -> Result<InitOutcome> {
             }
         }
     };
-    for c in &issue.claims {
-        let tail = if c.opened_pr {
-            "and opened a PR"
-        } else {
-            "but never opened a PR"
-        };
-        notes.push(format!("@{} claimed this {} {}", c.user, c.at, tail));
-    }
-
     let study = Study {
         schema_version: SCHEMA_VERSION,
         issue,
@@ -205,8 +175,6 @@ fn fetch_issue(repo: &str, number: u64) -> Result<Issue> {
     }
     let v: Value = serde_json::from_slice(&out.stdout).context("parsing gh output")?;
 
-    let claims = extract_claims(repo, &v);
-
     Ok(Issue {
         repo: repo.to_string(),
         number,
@@ -228,60 +196,8 @@ fn fetch_issue(repo: &str, number: u64) -> Result<Issue> {
             .take(10)
             .collect(),
         body: v["body"].as_str().map(ToString::to_string),
-        claims,
         extra: Extra::default(),
     })
-}
-
-/// Find comments that read as "I'm taking this", and check whether the author ever
-/// followed through with a PR.
-fn extract_claims(repo: &str, v: &Value) -> Vec<Claim> {
-    let Some(comments) = v["comments"].as_array() else {
-        return Vec::new();
-    };
-    let mut claims = Vec::new();
-    for c in comments {
-        let body = c["body"].as_str().unwrap_or_default().to_lowercase();
-        if !CLAIM_PHRASES.iter().any(|p| body.contains(p)) {
-            continue;
-        }
-        let Some(user) = c["author"]["login"].as_str() else {
-            continue;
-        };
-        if claims.iter().any(|e: &Claim| e.user == user) {
-            continue;
-        }
-        claims.push(Claim {
-            user: user.to_string(),
-            at: c["createdAt"]
-                .as_str()
-                .unwrap_or_default()
-                .chars()
-                .take(10)
-                .collect(),
-            url: c["url"].as_str().unwrap_or_default().to_string(),
-            opened_pr: author_has_pr(repo, user),
-        });
-    }
-    claims
-}
-
-/// Best-effort: whether `user` has ever opened a PR against `repo`.
-///
-/// A claim with no PR behind it after months is the signal that an issue is actually
-/// free to pick up, so this is worth one extra API call per claimant.
-fn author_has_pr(repo: &str, user: &str) -> bool {
-    Command::new("gh")
-        .args([
-            "pr", "list", "--repo", repo, "--author", user, "--state", "all", "--limit", "1",
-            "--json", "number",
-        ])
-        .output()
-        .ok()
-        .filter(|o| o.status.success())
-        .and_then(|o| serde_json::from_slice::<Value>(&o.stdout).ok())
-        .and_then(|v| v.as_array().map(|a| !a.is_empty()))
-        .unwrap_or(false)
 }
 
 /// Where `init` should write when the user does not say.
