@@ -53,7 +53,10 @@ struct Cli {
     #[arg(long)]
     source: Option<PathBuf>,
     /// How much of the examples the reader writes themselves.
-    #[arg(long, value_enum, default_value = "full")]
+    ///
+    /// Defaults to `none` because a file of `TODO`s cannot be executed, so nobody —
+    /// including the agent that wrote it — can check that it works.
+    #[arg(long, value_enum, default_value = "none")]
     tutorial: Tutorial,
     /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
     #[arg(long)]
@@ -102,7 +105,7 @@ fn main() -> Result<()> {
     println!("created {dir}");
     println!("  CONTEXT.md   the study — an agent fills in the empty sections");
     println!("  AGENTS.md    what a good study contains");
-    println!("  examples/    today's behaviour, and the target");
+    println!("  00_*, 01_*    runnable probes of today, each ending in what changes");
     println!();
     println!("next: /vis-oss in your agent, or tell it to follow {dir}/AGENTS.md");
     Ok(())

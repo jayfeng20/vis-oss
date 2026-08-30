@@ -198,7 +198,7 @@ reads as test scaffolding when these are files the reader runs and watches.
 
 ### Tutorial level
 
-`CONTEXT.md` records the level the study was generated at. It applies to every file.
+`CONTEXT.md` records the level the study was generated at. It applies to every file, and defaults to `none` — a file of `TODO`s cannot be executed, so writing one forfeits the only check available to you.
 
 | level | the file contains |
 |---|---|
