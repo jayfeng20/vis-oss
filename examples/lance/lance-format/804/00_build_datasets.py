@@ -1,13 +1,15 @@
 """
-Build the three datasets 01_flat_search.py queries.
+Builds the three datasets 01_flat_search.py queries.
 
     cd ~/Coding/lance/python
     uv run --frozen python <this file>
 
-Tutorial level: none — this file is complete.
+Tutorial level: partial — this file is setup, so it is complete. The stub is in 01.
 
-Verified: run 2026-08-30 against lance 12.0.0-beta.5 (checkout f603c551). Wrote
-2,000 / 20,000 / 20,000 rows in ~90s, the bulk of it IVF_PQ training on the third.
+Not run — Python, so there is nothing to compile. APIs read against lance 324cedd9d:
+write_dataset at python/python/lance/dataset.py:7719, LanceDataset.create_index at
+:4124, list_indices at :1122. The row counts are the ones an earlier run of this study
+confirmed will train an IVF_PQ index; expect the third write to take most of the time.
 
 Issue #804 turns on one distinction: a brute-force vector search that is cheap versus one
 that is expensive. So you need both. The small dataset matters as much as the large one —
@@ -36,9 +38,10 @@ def make_table(rows: int, seed: int) -> pa.Table:
     return pa.table(
         {
             "id": pa.array(range(rows), pa.int32()),
-            # FixedSizeList<float32, DIM> is what get_vector_type requires,
-            # rust/lance/src/dataset/scanner.rs:5084. A plain List column is rejected
-            # before the query ever reaches the KNN path.
+            # FixedSizeList<float32, DIM> is what the vector path requires: the column
+            # type is checked in Scanner::vector_search, rust/lance/src/dataset/
+            # scanner.rs:5075. A plain List column is rejected before the query ever
+            # reaches the KNN path.
             "vector": pa.FixedSizeListArray.from_arrays(
                 pa.array(vectors.reshape(-1)), DIM
             ),
@@ -53,6 +56,7 @@ def write(name: str, rows: int, seed: int, *, index: bool) -> lance.LanceDataset
     dataset = lance.write_dataset(make_table(rows, seed), path, mode="overwrite")
     if index:
         # num_sub_vectors must divide DIM: 128 / 16 = 8 bytes per compressed vector.
+        # This call is the slow one — training the IVF centroids dominates the script.
         dataset = dataset.create_index(
             "vector", index_type="IVF_PQ", num_partitions=16, num_sub_vectors=16
         )
