@@ -27,22 +27,36 @@ to.
 
 ## Use
 
-Once, to install the `/vis-oss` command into whichever agent CLIs you have, and to
-choose where studies are kept:
+### Once, in a terminal
 
 ```sh
-vis-oss --install-command
-vis-oss --set-root ~/Coding/OSS-study     # optional; defaults to ~/vis-oss
+vis-oss --install-command                 # adds a /vis-oss command to your agent CLIs
+vis-oss --set-root ~/Coding/OSS-study     # where studies live; defaults to ~/vis-oss
 ```
 
-Then, from inside your clone of the project, with the number of the issue you want to
-study:
+`--install-command` writes a prompt file into `~/.claude/commands/` and `~/.codex/prompts/`,
+whichever already exist. `--set-root` saves one path to `~/.config/vis-oss/root`. Neither
+touches the project you are contributing to.
+
+### Per issue, in your agent
+
+Start the agent **from inside your clone of the project** — vis-oss reads the repository,
+remotes and commit from wherever it is run, so the directory you are in is what decides
+which project gets studied.
+
+```sh
+cd ~/Coding/lance      # your clone of the project
+claude                 # or whichever agent you installed the command into
+```
+
+Then at the agent's prompt, not the shell's:
 
 ```
 /vis-oss 804
 ```
 
-Your agent creates the study and fills it in. You get:
+`804` is the issue number. The agent runs `vis-oss 804` for you, reads the contract that
+lands next to the study, investigates the codebase, and writes the study. You get:
 
 ```
 ~/Coding/OSS-study/lance/lance-format/804/
@@ -51,7 +65,7 @@ Your agent creates the study and fills it in. You get:
   examples/     runnable probes of today's behaviour, each ending in what changes
 ```
 
-Studies are filed as `<root>/<repo-name>/<owner>/<issue>/`, so the root is browsable by
+Studies are filed as `<root>/<repo-name>/<owner>/<issue>/`, so the root stays browsable by
 project.
 
 [Here is a finished one](examples/lance/lance-format/804/CONTEXT.md), for
@@ -61,8 +75,17 @@ The examples are the point: runnable probes of what the code does today, with co
 naming the function or struct each call reaches and where it is declared, and an `AFTER`
 block saying what would differ once the issue is fixed. They never patch the project.
 
-Without an agent, `vis-oss 804` creates the same directory and you fill in `CONTEXT.md`
-yourself — it is a markdown file with headings.
+### Or without an agent, in a terminal
+
+```sh
+cd ~/Coding/lance
+vis-oss 804
+```
+
+Same directory, same contract, but it stops after creating them — `CONTEXT.md` arrives as
+a markdown file with empty headings and the issue body, and you fill it in yourself.
+
+### What it reads from where you run it
 
 The repository, root and commit come from git. `upstream` wins over `origin`, since on a
 fork that's where the issue lives. If your clone is behind upstream, vis-oss says so and
