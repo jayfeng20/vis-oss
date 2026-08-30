@@ -187,10 +187,10 @@ is standard and near-certain, but the ratio that belongs in a PR description is 
 study, because no large dataset was ever built. `examples/01_flat_search.py` is written to
 produce it; nobody has run it.
 
-**Neither example file has been executed.** They are written against APIs I
-read in the source (`nearest`, `explain_plan`, `create_index`, `list_indices`) and against
-lance's own `benchmarks/dbpedia-openai/datagen.py`, but the scripts themselves are
-unrun — expect to fix small things.
+**Neither example file has been executed** — see the provenance line in each. They are
+written against APIs read in the source and against lance's own
+`benchmarks/dbpedia-openai/datagen.py`, but the scripts themselves are unrun; expect to
+fix small things.
 
 **The threshold recommendation is a judgement with no data behind it.** Rows × dimensions
 is argued from the cost model, not from measurement, and I did not check whether Lance
