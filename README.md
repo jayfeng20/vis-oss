@@ -14,7 +14,19 @@ and is not meant to "generate the final solution for the issue".
 ## Install
 
 ```sh
-cargo install --git https://github.com/jayfeng20/vis-oss vis-oss
+cargo install --git https://github.com/jayfeng20/vis-oss
+```
+
+That builds the binary and puts it in `~/.cargo/bin`, which rustup already added to your
+`PATH`, so `vis-oss` works from any directory. Nothing is installed into the projects you
+study.
+
+To upgrade later, add `--force` — the version number does not change between commits, so
+cargo otherwise reports it as already installed and does nothing:
+
+```sh
+cargo install --git https://github.com/jayfeng20/vis-oss --force
+vis-oss --install-command      # the agent command is a copy; refresh it too
 ```
 
 You need `git`, and `gh` authenticated (`gh auth login`) to read the issue — without it
