@@ -29,11 +29,6 @@ pub fn head_commit(root: &Path) -> Option<String> {
     git(root, &["rev-parse", "HEAD"]).filter(|s| !s.is_empty())
 }
 
-/// The branch currently checked out, or `None` on a detached HEAD.
-pub fn current_branch(root: &Path) -> Option<String> {
-    git(root, &["rev-parse", "--abbrev-ref", "HEAD"]).filter(|b| b != "HEAD" && !b.is_empty())
-}
-
 /// The name of the remote the issues live on.
 ///
 /// Prefers `upstream` over `origin`: on a fork, `origin` is your copy, and both the
