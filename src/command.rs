@@ -32,12 +32,14 @@ The command prints the directory it made. In it:
 - The examples go alongside them, numbered: `00_` for setup if it is needed, then
   `01_`, `02_` for the behaviours worth watching.
 
-Write each probe in the language the behaviour is observed in, and add a second file in
-the language the fix lands in when its API reaches what you need — the first shows what a
-user hits, the second compiles against the contributor's own tree and so doubles as an
-acceptance check. Same behaviour, same number, different extension: `01_flat_search.py`
-alongside `01_flat_search.rs`. Skip the second when the thing is not reachable from
-outside the crate, and say so in one line.
+Write each probe twice: once in the language the behaviour is **observed** in, and once in
+the language it is **implemented** in. The first shows what a user hits; the second runs
+against the contributor's own tree with nothing rebuilt in between, so it doubles as an
+acceptance check. The implementation language always reaches the behaviour — a binding is
+built on the core's public API, so it cannot expose what the core does not — which is why
+this is a rule rather than a preference. Same behaviour, same number, different extension:
+`01_flat_search.py` alongside `01_flat_search.rs`. When the two languages are the same,
+there is one file; say so in one line.
 
 Investigate from the repository you are in, not from the study directory — you need to
 search and read the project's source. Write into the study directory by absolute path.
@@ -61,8 +63,11 @@ DataFusion is around nine hundred crates before the compiler reaches your file.
 
 So the check is reading. Open the file, find the symbol, confirm the signature — an API you
 read is as real as one you called. Say what you read in each file's provenance line, with
-the commit: real paths, never just a claim that you were careful. Say plainly that the file
-was neither run nor compiled, so the reader expects a first error rather than a clean build.
+the commit: real paths, never just a claim that you were careful.
+
+Say in that same line that the file is a draft — neither run nor compiled. It may not
+compile first try, and that is expected; a reader who was told loses a minute, and one who
+assumed it built clean loses an afternoon wondering what they broke.
 
 What you owe instead is code that matches its tutorial level — complete at `none`, stubs
 and scaffolding at `partial` (the default), `TODO`s at `full`. That level is the promise

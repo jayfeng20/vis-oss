@@ -82,25 +82,39 @@ This is your reading of the issue, not a decision — the maintainers own the re
 Everything else in `CONTEXT.md` frames them. An example is a **runnable probe of what the
 code does today**, annotated so that reading it teaches the code path — not just the API.
 
-Write the probe in the language the behaviour is *observed* in, which is not always the
-language the fix lands in. For a Rust library with Python bindings, a user meets the slow
-query in Python; that probe is Python, and its annotations point down into the Rust.
-
-**Then add the second language when the fix lands there and its API allows it.** The two
-files do different jobs, so neither replaces the other:
+Write each probe **twice, from two vantage points**:
 
 | written in | what it gives the reader |
 |---|---|
-| the language it is observed in | what a user actually experiences, which is why the issue was filed at all |
-| the language the fix lands in | a probe that compiles against their own working tree, so re-running it after the change is a working acceptance check |
+| the language the behaviour is **observed** in | what a user actually experiences, which is why the issue was filed at all |
+| the language the behaviour is **implemented** in | a probe that runs against their own working tree with nothing rebuilt in between, so re-running it after the change is a working acceptance check |
+
+For a Rust library with Python bindings, a user meets the slow query in Python — so that
+probe is Python, and its annotations point down into the Rust. The second is Rust, calling
+the same path directly.
+
+Note the second row says *implemented*, not *where the fix will land*. Where the fix lands
+is the maintainers' call and the study does not get to assume it; where the behaviour lives
+today is something you can read.
+
+**The implementation language always works, which is why this is a rule and not a
+preference.** A binding is built on the core's public API, so anything reachable from
+Python is reachable from Rust by construction — the binding cannot expose what the core
+does not. The reverse is not true, which is the whole reason for two files: the observation
+language is the one that may fall short.
+
+Two consequences worth stating:
+
+- When the two are the same language — a bug that lives entirely in the binding layer, or a
+  project with no bindings at all — there is one file, not two. Say so in one line in the
+  study's *Examples* section, so the reader knows it was decided rather than forgotten.
+- If you find yourself unable to reach the behaviour from the implementation language, you
+  have most likely misread where it lives. Do not reach into internals to force it; go back
+  and find the public entry point the binding itself calls.
 
 Give both the same number and let the extension separate them: `01_flat_search.py` and
 `01_flat_search.rs` are one probe seen from two sides, and numbering them `01` and `02`
 would claim they are two behaviours.
-
-Skip the second file when the API does not permit it — if what you need is not reachable
-from outside the crate, or exists only in the binding layer. Say which in one line in the
-study's *Examples* section, and do not reach into internals to manufacture it.
 
 One setup file serves both where the data is the same on disk, which it usually is. Write
 it in whichever language is cheaper for the reader to get running, and say in the other
@@ -125,10 +139,11 @@ reader about how finished this is, and it is the honest lever you do have. It is
 bounds the risk: `partial`, the default, ships the part you can stand behind from reading
 and leaves the rest marked, so an uncompiled file is not pretending to be a working one.
 
-Be straight about it in the provenance line. A Rust example nobody compiled will sometimes
-not compile — a trait bound, a generic parameter, an async runtime detail — and the
-reader's first `cargo check` is where that surfaces. Saying so costs a sentence and saves
-them the assumption that it built clean.
+**Say that it is a draft, in the file.** These are templates checked by reading, so a Rust
+example nobody compiled will sometimes not compile — a trait bound, a generic parameter, an
+async runtime detail — and the reader's first `cargo check` is where that surfaces. That is
+expected, and a reader who was told costs a minute where one who assumed it built clean
+loses an afternoon deciding whether they broke it. One line in the provenance is enough.
 
 Do not go further. No running an example to see whether it works, no throwaway scripts
 hunting for a data size or a parameter that makes a measurement come out, and nothing the
