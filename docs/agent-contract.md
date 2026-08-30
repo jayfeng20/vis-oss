@@ -86,44 +86,42 @@ Write them in the language the behaviour is *observed* in, which is not always t
 language the fix lands in. For a Rust library with Python bindings, a user meets the slow
 query in Python; the example is Python, and its annotations point down into the Rust.
 
-### Small and fast, first time
+### You write them; the reader runs them
 
-An example earns its place by landing the reader in the right code path, not by
-reproducing the issue's headline number. Write the **smallest input that still reaches
-that path**, and hold the study to a budget: no single file over about thirty seconds,
-and all of them together under two minutes on the machine you are on. The budget is run
-time — a first `cargo build` against a large workspace is minutes and there is nothing to
-be done about that except say so, as below.
+**You do not run these files.** Getting one to execute means first paying whatever the
+project charges for a first execution — a `cargo build` across a large workspace, a
+binding compiled from source, a dataset written before anything can be queried. That cost
+has nothing to do with how small your example is, and there is no way to predict it from
+outside.
+It is also work the reader repeats anyway, on their machine and against their working
+tree, which is the only run whose result they can trust.
 
-This is cheap to obey, because scale is almost never what the reader needs. A query over
-a thousand rows takes the same branch as one over a million, and the branch is what is
-being taught.
+So the check available to you is **reading**, and it is the one the ground rules already
+demand: open the file, find the symbol, confirm the signature. An API you read is as real
+as an API you called, and reading costs seconds. Do it exhaustively, and say where you
+looked.
 
-The failure mode the budget exists to prevent is a hunt for a number. You write a probe,
-the measurement comes out unconvincing, so you grow the data, retrain the index, add
-repeats, and try again — each attempt costing minutes, none of it changing what the reader
-learns, and all of it spent before the study has a single section written. Concretely:
+What this rules out, specifically:
 
-- **Do not write throwaway scripts to find a size or a parameter that makes a result come
-  out.** If your first honest run does not show what you expected, that *is* a finding —
-  write it down and move on. An issue whose premise does not reproduce at small scale is
-  worth knowing about.
-- **Do not build anything the project would itself call a benchmark** — a trained index, a
-  large generated dataset, a full load of real data. Those cost minutes, and they belong
-  to the user.
-- If a behaviour genuinely only appears at a scale you cannot reach inside the budget,
-  keep the small file, say plainly where the claim is made that it is unmeasured, and
-  offer the heavy run.
+- Running an example, or a cut-down version of one, to see whether it works.
+- Throwaway scripts to find a data size or a parameter that makes a measurement come out
+  the way you expected.
+- Building anything the project would itself call a benchmark — a trained index, a large
+  generated dataset, a full load of real data.
 
-### The heavy run is a conversation, not a file
+Size still matters, because someone else pays for it: write the **smallest input that
+reaches the code path**. A query over a thousand rows takes the same branch as one over a
+million, and the branch is what is being taught.
 
-Some questions really do need scale: a query that is only slow at a million rows, a build
-that only regresses on a big workspace. Finish the study without them. Then, in your reply
-to the user — not in the study — say in one line what a longer run would add, roughly what
-it would cost, and that you will do it if asked.
+### A long run is a conversation, not a file
 
-Never start one unprompted. A study that arrives in two minutes and offers a ten-minute
-measurement is worth more than one that takes twelve minutes and never asked.
+Some questions do need executing — does this reproduce, and how slow is slow. Finish the
+study first. Then, in your reply to the user and not in the study, say in one line what
+running it would settle, roughly what that would cost, and that you will do it if asked.
+
+That offer is the whole mechanism. The user knows what their machine and their afternoon
+are worth; you do not. A study that arrives in minutes and offers to go further beats one
+that spent an hour deciding for them.
 
 ### Which files to create
 
@@ -137,8 +135,7 @@ every file must be recognisably one of these, numbered in the order it is run.
 
 Check `test_data/`, `benchmarks/` and any datagen scripts before writing setup: reusing
 what the maintainers already ship makes your numbers comparable to theirs, and costs you
-nothing to build. Split probes when the
-behaviours differ — a slow read and a wrong result are two files; timing and plan
+nothing to build. Split probes when the behaviours differ — a slow read and a wrong result are two files; timing and plan
 inspection of one query are one file.
 
 **There is no file for the target behaviour.** It cannot run, because the code producing
@@ -152,9 +149,9 @@ In order:
 
 1. **A docstring**, stating in this order: what this file demonstrates, in one sentence;
    the exact command to run it and the directory to run it from; and the tutorial level.
-2. **A provenance line** — whether *you* ran it, and what came out. This is the single
-   most valuable line in the file, because it is what separates a checked example from a
-   plausible one.
+2. **A provenance line** — that it was not run, and what you checked instead: the files
+   you read to confirm every API it calls. This is what separates an example built from
+   the source from one built from memory, and it tells the reader which parts to distrust.
 3. **The body**, annotated as below.
 4. **An `AFTER` block** — probes only. Setup files do not need one; nothing about
    building the inputs changes.
@@ -167,32 +164,30 @@ says nothing.
     cd ~/Coding/lance/python
     LANCE_LOG=warn uv run python <this file>
 
-Tutorial level: none — this file is complete.
+Tutorial level: partial — the timing helper is yours to write.
 
-Verified: run 2026-08-30 against lance f603c551, 20k rows x 128 dims, 3.1s total.
-    flat 14.6ms · indexed 24.7ms · plan flat vs ANN · stderr empty
-
-At this size the index is *slower* than scanning everything, so the ratio the issue
-assumes is not visible here and this file does not claim it. The plan shapes are the
-part that holds at any size, and they are what the probe asserts on.
+Not run. Every API it calls was read against lance f603c551:
+    lance.write_dataset          python/python/lance/__init__.py:41
+    LanceDataset.create_index    python/python/lance/dataset.py:2274
+    nearest= on to_table         python/python/lance/dataset.py:512
+    LANCE_LOG -> init_logging    python/src/lib.rs:169
+The plan assertions come from reading Scanner::vector_search. The timings are whatever
+your machine does, which is why nothing asserts on them.
 """
 ```
 
-That last paragraph is not an apology. Writing down the measurement you actually got,
-including when it undercuts the issue, is the whole value of having run the thing.
+Real paths and real line numbers, not a claim that you were careful: "not run, APIs
+verified" is worth nothing to a reader who cannot see what you opened. Never leave
+provenance out — an example without one is indistinguishable from one written from
+memory.
 
-If you could not run it, say that instead, and say why: `Not run: needs a 6GB download.
-The numbers below are predicted, not measured.` Never leave provenance out — an example
-with no provenance line is indistinguishable from one that was never checked.
-
-**Assert what is structural; print what is not.** A claim the file makes about the
-project should fail loudly when it stops being true — but only a claim that holds on any
-machine at any size. Which plan is chosen, which operator appears in it, whether a warning
-reached stderr, what a call returns: assert those, and they defend themselves. Durations,
-ratios and recall move with the hardware and the row count, so print them next to the
-numbers you measured and let the reader compare. `assert flat_ms > indexed_ms * 10` is not
-a check, it is a flake you handed to someone else — and tuning the input until it passes
-is how an afternoon disappears.
+**Assert what is structural; print what is not.** Every assertion you write runs on a
+machine you have never seen, so it must hold on any of them. Which plan is chosen, which
+operator appears in it, whether a warning reached stderr, what a call returns: assert
+those, and they defend themselves when the project changes underneath. Durations, ratios
+and recall move with the hardware and the row count, so print them and let the reader
+judge. `assert flat_ms > indexed_ms * 10` is not a check, it is a flake posted to a
+stranger.
 
 ### Making them runnable
 
@@ -242,7 +237,8 @@ The contributor gets a real binary compiled against their own working tree — s
 make the change, re-running the probe shows the `AFTER` block coming true. That is a
 working acceptance check that never touches the project's source.
 
-Say in the docstring that the first build is slow, and give the real number if you ran it.
+Say in the docstring that the first build is slow, so the reader does not read a long
+compile as a hang. You will not have a number for it; say that rather than guessing one.
 Do not reach for `cargo -Zscript`: it is nightly-only. If what you need to observe is not
 reachable from outside the crate, that is a signal the example belongs in the observation
 language instead, not that you should reach into internals.
@@ -274,7 +270,10 @@ reads as test scaffolding when these are files the reader runs and watches.
 
 ### Tutorial level
 
-`CONTEXT.md` records the level the study was generated at. It applies to every file, and defaults to `none` — a file of `TODO`s cannot be executed, so writing one forfeits the only check available to you.
+`CONTEXT.md` records the level the study was generated at. It applies to every file, and
+defaults to `partial`. Since nobody has executed these, `none` would promise complete
+working code on no evidence, and that promise is what the reader would act on. Write the
+scaffolding you can stand behind from reading; leave the rest as stubs.
 
 | level | the file contains |
 |---|---|
@@ -300,8 +299,10 @@ def median_query_ms(ds, q):
 Being vague is not the same as being a tutorial. "Figure out how to time this" helps
 nobody. Name the API, the file, and the shape of the assertion; withhold only the typing.
 
-At `full` and `partial` a file will not run as shipped, so its provenance line says what
-you verified instead — that the APIs it names exist, and where you checked.
+At `partial`, finish everything that reaches the code path — the imports, the setup, the
+call itself, the annotations — and stub only what the reader gains from working out. The
+file should be one or two stubs away from running, so filling them is a short task with a
+visible result rather than a rewrite.
 
 ### Every behaviour probe ends with an AFTER block
 
@@ -330,7 +331,9 @@ that they can make that decision quickly and from real code.
 ## Ground rules
 
 - **Never invent a line number, an API, or a flag.** Read the file. Verify the symbol
-  exists. Everything you write will be trusted by someone who cannot check it cheaply.
+  exists. This is the only check standing between you and the reader — no run will catch
+  what you got wrong — and everything you write will be trusted by someone who cannot
+  check it cheaply.
 - **Record the commit you worked against** — it is already at the top of `CONTEXT.md`.
   If you pull mid-investigation, re-verify your references before finishing.
 - **Do not post anything to GitHub.** You investigate and write local files. Issue

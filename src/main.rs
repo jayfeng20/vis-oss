@@ -57,9 +57,10 @@ struct Cli {
     source: Option<PathBuf>,
     /// How much of the examples the reader writes themselves.
     ///
-    /// Defaults to `none` because a file of `TODO`s cannot be executed, so nobody —
-    /// including the agent that wrote it — can check that it works.
-    #[arg(long, value_enum, value_name = "LEVEL", default_value = "none")]
+    /// Defaults to `partial`: the agent does not run these files, so `none` would promise
+    /// complete working code that nobody has executed. Scaffolding it stands behind from
+    /// reading, with the interesting parts left to you, is what it can honestly deliver.
+    #[arg(long, value_enum, value_name = "LEVEL", default_value = "partial")]
     tutorial: Tutorial,
     /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
     #[arg(long)]

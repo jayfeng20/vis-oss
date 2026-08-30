@@ -91,9 +91,11 @@ The examples are the point: runnable probes of what the code does today, with co
 naming the function or struct each call reaches and where it is declared, and an `AFTER`
 block saying what would differ once the issue is fixed. They never patch the project.
 
-They are deliberately small — the smallest input that reaches the code path, so the whole
-study runs in a couple of minutes rather than spending them on a dataset nobody reads. A
-measurement that needs real scale is offered to you at the end, not run behind your back.
+The agent writes them but never runs them: a first execution costs whatever the project
+charges to build, which is unbounded and is work you repeat anyway on your own tree. It
+verifies by reading the source instead, and each file says which paths it read. They
+arrive one or two stubs short of running — see `--tutorial` — and if executing something
+would settle a question, the agent offers rather than spending your afternoon on it.
 
 ### Or without an agent, in a terminal
 
@@ -146,7 +148,7 @@ than the one you have checked out.
 | `--set-root <path>` | Remember a root for every later run, and exit |
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
-| `--tutorial full\|partial\|none` | How much of the examples you write yourself. `none` (default) is complete code, `partial` leaves stubs, `full` is `TODO`s |
+| `--tutorial full\|partial\|none` | How much of the examples you write yourself. `partial` (default) leaves the parts worth thinking about as stubs, `none` is complete code, `full` is `TODO`s |
 | `--note <text>` | A lead for the agent to verify. Repeatable |
 | `--redo` | Archive an existing study and start fresh |
 | `--sync-upstream` | Fast-forward the checkout onto the canonical remote. With an issue number it runs first; on its own, `vis-oss --sync-upstream` just syncs |
