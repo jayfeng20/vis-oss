@@ -81,6 +81,29 @@ Write them in the language the behaviour is *observed* in, which is not always t
 language the fix lands in. For a Rust library with Python bindings, a user meets the slow
 query in Python; the example is Python, and its annotations point down into the Rust.
 
+### Which files to create
+
+Two roles, and only two.
+
+**`00_…` — setup, and only if the probes need it.** Whatever has to exist before anything
+can be observed: data written, a server started, a state reached. Skip it entirely when
+the project already ships what you need — check `test_data/`, `benchmarks/` and any
+datagen scripts first, because reusing the maintainers' fixtures makes your results
+comparable to theirs. One setup file at most; if you need two, the study is too broad.
+
+**`01_…`, `02_…` — one per behaviour worth watching on its own.** These are the study.
+Each runs today, against today's code, and each ends with an `AFTER` block. Split them
+when the behaviours are genuinely separate — a slow read and a wrong result are two
+files; timing and plan inspection of the same query are one.
+
+Number them in the order they are run, and name them for what they do in the project's
+own words: `00_build_datasets.py`, then `01_flat_search.py`.
+
+**There is no file for the target behaviour.** It cannot run, because the code that
+produces it does not exist — a file like `02_proposed.py` is a patch wearing an example's
+clothes, and writing it is writing the fix. What the change looks like belongs in the
+`AFTER` block of the probe it affects, and in full in the study's last section.
+
 ### Annotate the path into the code
 
 Every call that matters carries a comment naming where the thing it reaches is
@@ -109,11 +132,9 @@ what the maintainers use makes your numbers comparable to theirs.
 Every example needs a `run` command that works from a stated directory, and must actually
 run once the reader has filled in whatever the tutorial level left out.
 
-Name them in the project's own vocabulary, numbered in the order they are run:
-`00_build_datasets.py` before `01_flat_search.py`, because Lance calls them datasets and
-`scanner.rs` calls it flat search. Avoid words the project does not use — `corpus` is an
-NLP term that a study of an IO bug cannot reuse, and `fixture` reads as test scaffolding
-when these are things the reader runs and watches.
+Avoid words the project does not use: `corpus` is an NLP term a study of an IO bug cannot
+reuse, and `fixture` reads as test scaffolding when these are files the reader runs and
+watches.
 
 ### Tutorial level
 
@@ -130,10 +151,11 @@ to time this" helps nobody. "Run each query three times and take the median — 
 call pays for opening files and warming page cache" is a tutorial. Name the API, the file,
 and the shape of the assertion; withhold only the typing.
 
-### Every example ends with an AFTER block
+### Every behaviour probe ends with an AFTER block
 
 A commented block showing what would differ when this same file runs once the issue is
-fixed. A description, never a patch.
+fixed. A description, never a patch. Setup files do not need one — nothing about building
+the inputs changes.
 
 ```python
 # ---- AFTER ----
