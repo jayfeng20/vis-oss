@@ -143,31 +143,12 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<Created> {
 
     // Only reachable with --redo: without it the caller has already returned, having
     // found the study before paying for anything.
-    if opts.redo {
-        if let Ok(existing) = std::fs::read_to_string(dir.join("CONTEXT.md")) {
-            // Move it aside rather than deleting: a study is hours of reading, and the
-            // commit it was pinned to names it usefully.
-            let stamp = pinned_commit(&existing).map_or_else(
-                || "previous".to_string(),
-                |c| c.chars().take(9).collect::<String>(),
-            );
-            let archive = dir.with_file_name(format!(
-                "{}.{stamp}",
-                dir.file_name().unwrap_or_default().to_string_lossy()
-            ));
-            if archive.exists() {
-                bail!(
-                    "{} already exists — move or delete it first",
-                    archive.display()
-                );
-            }
-            std::fs::rename(&dir, &archive)
-                .with_context(|| format!("archiving to {}", archive.display()))?;
-            notes.push(format!(
-                "archived the previous study to {}",
-                archive.display()
-            ));
-        }
+    if opts.redo && dir.join("CONTEXT.md").is_file() {
+        // Deleted, not moved aside. A study is a draft the agent regenerates in minutes,
+        // so keeping every superseded one would file clutter nobody reads under a name
+        // nobody remembers.
+        std::fs::remove_dir_all(&dir).with_context(|| format!("removing {}", dir.display()))?;
+        notes.push(format!("deleted the previous study at {}", dir.display()));
     }
     std::fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
 
