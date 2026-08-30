@@ -82,9 +82,29 @@ This is your reading of the issue, not a decision — the maintainers own the re
 Everything else in `CONTEXT.md` frames them. An example is a **runnable probe of what the
 code does today**, annotated so that reading it teaches the code path — not just the API.
 
-Write them in the language the behaviour is *observed* in, which is not always the
+Write the probe in the language the behaviour is *observed* in, which is not always the
 language the fix lands in. For a Rust library with Python bindings, a user meets the slow
-query in Python; the example is Python, and its annotations point down into the Rust.
+query in Python; that probe is Python, and its annotations point down into the Rust.
+
+**Then add the second language when the fix lands there and its API allows it.** The two
+files do different jobs, so neither replaces the other:
+
+| written in | what it gives the reader |
+|---|---|
+| the language it is observed in | what a user actually experiences, which is why the issue was filed at all |
+| the language the fix lands in | a probe that compiles against their own working tree, so re-running it after the change is a working acceptance check |
+
+Give both the same number and let the extension separate them: `01_flat_search.py` and
+`01_flat_search.rs` are one probe seen from two sides, and numbering them `01` and `02`
+would claim they are two behaviours.
+
+Skip the second file when the API does not permit it — if what you need is not reachable
+from outside the crate, or exists only in the binding layer. Say which in one line in the
+study's *Examples* section, and do not reach into internals to manufacture it.
+
+One setup file serves both where the data is the same on disk, which it usually is. Write
+it in whichever language is cheaper for the reader to get running, and say in the other
+probe that it depends on it.
 
 ### The only check is that it compiles
 
@@ -132,7 +152,7 @@ every file must be recognisably one of these, numbered in the order it is run.
 | role | prefix | how many |
 |---|---|---|
 | **setup** — whatever must exist before anything can be observed: data written, a server started, a state reached | `00_` | at most one, and none if the project already ships what you need |
-| **probe** — one behaviour worth watching on its own, running against today's code | `01_`, `02_`, … | as many as there are genuinely separate behaviours |
+| **probe** — one behaviour worth watching on its own, running against today's code | `01_`, `02_`, … | as many as there are genuinely separate behaviours — the same behaviour in two languages shares one number |
 
 Check `test_data/`, `benchmarks/` and any datagen scripts before writing setup: reusing
 what the maintainers already ship makes your numbers comparable to theirs, and costs you
@@ -150,6 +170,8 @@ In order:
 
 1. **A docstring**, stating in this order: what this file demonstrates, in one sentence;
    the exact command to run it and the directory to run it from; and the tutorial level.
+   The lowest-numbered file in each language also says how to get an environment where
+   that command works — see below.
 2. **A provenance line** — what was checked and what was not. For Rust, that it compiles
    and against which commit; otherwise, the paths you read to confirm the APIs it calls.
    Keep it short. It exists so the reader knows which parts to distrust.
@@ -188,9 +210,8 @@ posted to a stranger.
 
 ### Making them runnable
 
-**Python, or any interpreted binding:** nothing to set up. Give the command and the
-directory, and use the project's own environment tooling — `uv run`, `poetry run`,
-whatever its docs prescribe.
+**Python, or any interpreted binding:** nothing for *you* to create — the project already
+has an environment, and the reader's job is to enter it. See *Getting an environment* below.
 
 **Rust:** one Cargo project per *project studied*, not per issue, at the repository level
 of the study root — one directory above the issue:
@@ -200,7 +221,8 @@ of the study root — one directory above the issue:
   Cargo.toml
   target/                              <- built once, reused by every issue
   804/
-    CONTEXT.md   AGENTS.md   01_flat_search.rs
+    CONTEXT.md   AGENTS.md   00_build_datasets.py
+    01_flat_search.py        01_flat_search.rs      <- one probe, both languages
   8245/
     CONTEXT.md   AGENTS.md   01_stringview.rs
 ```
@@ -241,6 +263,28 @@ slow too, so a long compile is not read as a hang.
 Do not reach for `cargo -Zscript`: it is nightly-only. If what you need to observe is not
 reachable from outside the crate, that is a signal the example belongs in the observation
 language instead, not that you should reach into internals.
+
+#### Getting an environment
+
+A run command only works inside an environment, and the reader does not have one yet. So
+the lowest-numbered file **in each language** opens with what it takes to get there — once,
+at the top, not repeated in every file.
+
+Take it from the project's own docs. The answer differs per project, and guessing it wrong
+strands the reader on step one:
+
+- **Python:** whatever that project prescribes. A `uv` project usually wants `uv sync` or
+  `make install` once and then `uv run python <file>` with **no activation at all** —
+  telling that reader to `source .venv/bin/activate` is simply wrong, and some projects say
+  in as many words not to rely on an activated environment. A plain venv or poetry project
+  does want the activation line. Read `python/AGENTS.md`, `CONTRIBUTING.md` or the README
+  and copy what is actually there.
+- **Rust:** the directory holding the shared study `Cargo.toml` — one level up from the
+  study directory, and not the project's own checkout — plus the `cargo run --bin` line.
+
+If a native extension has to be compiled before anything can import it, that is part of the
+environment and belongs in this block. It is usually the longest step, and discovering it
+after a failed import is how a reader loses an hour.
 
 ### Annotate the path into the code
 

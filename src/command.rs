@@ -32,6 +32,13 @@ The command prints the directory it made. In it:
 - The examples go alongside them, numbered: `00_` for setup if it is needed, then
   `01_`, `02_` for the behaviours worth watching.
 
+Write each probe in the language the behaviour is observed in, and add a second file in
+the language the fix lands in when its API reaches what you need — the first shows what a
+user hits, the second compiles against the contributor's own tree and so doubles as an
+acceptance check. Same behaviour, same number, different extension: `01_flat_search.py`
+alongside `01_flat_search.rs`. Skip the second when the thing is not reachable from
+outside the crate, and say so in one line.
+
 Investigate from the repository you are in, not from the study directory — you need to
 search and read the project's source. Write into the study directory by absolute path.
 
@@ -63,6 +70,12 @@ the project's own tooling (`uv run`, `poetry run`), and for Rust the shared Carg
 one level above the issue directory, with a `[[bin]]` for your file. `AGENTS.md` has the
 layout. Write the smallest input that reaches the code path — a thousand rows takes the
 same branch as a million.
+
+The lowest-numbered file in each language also opens with how to get an environment where
+its command works, taken from the project's own docs — not guessed. A `uv` project usually
+needs `uv sync` once and then `uv run`, with no venv to activate at all; a plain venv or
+poetry project needs the activation line. If a native extension must be compiled before
+anything can import it, that belongs in the block too — it is normally the longest step.
 
 When the study is done, if actually running something would settle a question, say in one
 line what it would settle and what it would cost, and offer to do it. Never start unasked.
