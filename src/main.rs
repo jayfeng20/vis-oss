@@ -39,26 +39,27 @@ use template::Tutorial;
     long_about = None
 )]
 struct Cli {
-    /// Issue number.
-    #[arg(required_unless_present_any = [
+    /// Issue number, as it appears on the tracker.
+    #[arg(value_name = "ISSUE_NUMBER", required_unless_present_any = [
         "install_command", "set_root", "update", "sync_upstream"
     ])]
     number: Option<u64>,
     /// Root to file this study under, overriding the saved root for this run.
     ///
     /// The study lands at `<root>/<name>/<owner>/<number>/` either way.
+    #[arg(value_name = "STUDY_ROOT")]
     base: Option<PathBuf>,
-    /// `owner/name`. Inferred from the git remotes when omitted.
-    #[arg(long)]
+    /// The repository the issue lives in. Inferred from the git remotes when omitted.
+    #[arg(long, value_name = "OWNER/NAME")]
     repo: Option<String>,
     /// Checkout to study. Defaults to the enclosing repository.
-    #[arg(long)]
+    #[arg(long, value_name = "REPO_PATH")]
     source: Option<PathBuf>,
     /// How much of the examples the reader writes themselves.
     ///
     /// Defaults to `none` because a file of `TODO`s cannot be executed, so nobody —
     /// including the agent that wrote it — can check that it works.
-    #[arg(long, value_enum, default_value = "none")]
+    #[arg(long, value_enum, value_name = "LEVEL", default_value = "none")]
     tutorial: Tutorial,
     /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
     #[arg(long)]
