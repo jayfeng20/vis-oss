@@ -81,6 +81,96 @@ Write them in the language the behaviour is *observed* in, which is not always t
 language the fix lands in. For a Rust library with Python bindings, a user meets the slow
 query in Python; the example is Python, and its annotations point down into the Rust.
 
+### Which files to create
+
+Two roles. Names are yours to choose — pick what the project would call the thing — but
+every file must be recognisably one of these, numbered in the order it is run.
+
+| role | prefix | how many |
+|---|---|---|
+| **setup** — whatever must exist before anything can be observed: data written, a server started, a state reached | `00_` | at most one, and none if the project already ships what you need |
+| **probe** — one behaviour worth watching on its own, running against today's code | `01_`, `02_`, … | as many as there are genuinely separate behaviours |
+
+Check `test_data/`, `benchmarks/` and any datagen scripts before writing setup: reusing
+the maintainers' fixtures makes your numbers comparable to theirs. Split probes when the
+behaviours differ — a slow read and a wrong result are two files; timing and plan
+inspection of one query are one file.
+
+**There is no file for the target behaviour.** It cannot run, because the code producing
+it does not exist. A file like `02_proposed.py` is a patch wearing an example's clothes,
+and writing it is writing the fix. What changes belongs in the `AFTER` block of the probe
+it affects, and in full in the study's last section.
+
+### What every file contains
+
+In order:
+
+1. **A docstring**, stating in this order: what this file demonstrates, in one sentence;
+   the exact command to run it and the directory to run it from; and the tutorial level.
+2. **A provenance line** — whether *you* ran it, and what came out. This is the single
+   most valuable line in the file, because it is what separates a checked example from a
+   plausible one.
+3. **The body**, annotated as below.
+4. **An `AFTER` block** — probes only. Setup files do not need one; nothing about
+   building the inputs changes.
+
+```python
+"""
+Times the same vector query with and without an index, and shows that the slow path
+says nothing.
+
+    cd ~/Coding/lance/python
+    LANCE_LOG=warn uv run python <this file>
+
+Tutorial level: none — this file is complete.
+
+Verified: run 2026-08-30 against lance f603c551, 500k rows x 1536 dims.
+    flat 1841ms · indexed 12ms · ratio 153x · stderr empty
+"""
+```
+
+If you could not run it, say that instead, and say why: `Not run: needs a 6GB download.
+The numbers below are predicted, not measured.` Never leave provenance out — an example
+with no provenance line is indistinguishable from one that was never checked.
+
+**Assert, do not print.** A claim the file makes about the project should fail loudly
+when it stops being true. `assert flat_ms > indexed_ms * 10` teaches and defends itself;
+a `print` rots silently.
+
+### Making them runnable
+
+**Python, or any interpreted binding:** nothing to set up. Give the command and the
+directory, and use the project's own environment tooling — `uv run`, `poetry run`,
+whatever its docs prescribe.
+
+**Rust:** put one Cargo project in `examples/`, depending on the pinned checkout by path,
+with a `[[bin]]` per example. The contributor runs
+`cargo run --bin 01_flat_search` and gets a real binary against their own working tree —
+so once they make the change, re-running the probe shows the `AFTER` block coming true.
+That is a working acceptance check that never touches the project's source.
+
+```toml
+[package]
+name = "study-examples"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+lance = { path = "/Users/you/Coding/lance/rust/lance" }   # the pinned checkout
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
+[[bin]]
+name = "01_flat_search"
+path = "src/bin/01_flat_search.rs"
+```
+
+Say in the docstring that the first build is slow — a dependency on a workspace this size
+pulls hundreds of crates — and give the real number if you ran it. Do not reach for
+`cargo -Zscript`: it is nightly-only. If what you need to observe is not reachable from
+outside the crate, that is a signal the example belongs in the observation language
+instead, not that you should reach into internals.
+
 ### Annotate the path into the code
 
 Every call that matters carries a comment naming where the thing it reaches is
@@ -94,7 +184,7 @@ ds.to_table(nearest={"column": "vector", "q": q, "k": 10})
 #    loads the index list, finds nothing covering this column, so at :5305
 #    it takes the flat branch
 # -> KNNVectorDistanceExec, declared rust/lance/src/io/exec/knn.rs:150
-#    scores every row; execute() at :904 is where the work happens
+#    scores every row; execute() at :869 is where the work happens
 ```
 
 Point at declarations, not only call sites: a reader who opens `knn.rs:150` finds the
@@ -102,45 +192,55 @@ struct and can read outward. Verify every line you cite, and name the symbol alo
 so the reference survives the file moving.
 
 These are teaching material, so hold them to production standards: real error handling, no
-bare `except`, no toy shortcuts, the project's own conventions and datasets. Check
-`benchmarks/`, `test_data/` and any datagen scripts before writing a generator — using
-what the maintainers use makes your numbers comparable to theirs.
-
-Every example needs a `run` command that works from a stated directory, and must actually
-run once the reader has filled in whatever the tutorial level left out.
-
-Name them in the project's own vocabulary, numbered in the order they are run:
-`00_build_datasets.py` before `01_flat_search.py`, because Lance calls them datasets and
-`scanner.rs` calls it flat search. Avoid words the project does not use — `corpus` is an
-NLP term that a study of an IO bug cannot reuse, and `fixture` reads as test scaffolding
-when these are things the reader runs and watches.
+bare `except`, no toy shortcuts, the project's own conventions. Avoid words the project
+does not use — `corpus` is an NLP term a study of an IO bug cannot reuse, and `fixture`
+reads as test scaffolding when these are files the reader runs and watches.
 
 ### Tutorial level
 
-`CONTEXT.md` records the level the study was generated at.
+`CONTEXT.md` records the level the study was generated at. It applies to every file.
 
-| level | the example contains |
+| level | the file contains |
 |---|---|
 | `full` | comments and `TODO`s. The reader writes every line. |
-| `partial` | scaffolding, with the parts worth thinking about left as stubs — `todo!()`, `raise NotImplementedError`, a body that returns nothing yet. |
+| `partial` | scaffolding, with the parts worth thinking about left as stubs. |
 | `none` | complete, runnable code. |
 
-At `full` and `partial`, being vague is not the same as being a tutorial. "Figure out how
-to time this" helps nobody. "Run each query three times and take the median — the first
-call pays for opening files and warming page cache" is a tutorial. Name the API, the file,
-and the shape of the assertion; withhold only the typing.
+Mark a stub the way the language does, and say what goes there — never leave a silent
+gap:
 
-### Every example ends with an AFTER block
+```rust
+fn median_query_ms(ds: &Dataset, q: &[f32]) -> f64 {
+    todo!("time three runs, return the median; the first pays for page-cache warmup")
+}
+```
+
+```python
+def median_query_ms(ds, q):
+    raise NotImplementedError("time three runs, return the median; the first pays for "
+                              "page-cache warmup")
+```
+
+Being vague is not the same as being a tutorial. "Figure out how to time this" helps
+nobody. Name the API, the file, and the shape of the assertion; withhold only the typing.
+
+At `full` and `partial` a file will not run as shipped, so its provenance line says what
+you verified instead — that the APIs it names exist, and where you checked.
+
+### Every behaviour probe ends with an AFTER block
 
 A commented block showing what would differ when this same file runs once the issue is
-fixed. A description, never a patch.
+fixed. A description, never a patch. Quote exact output rather than paraphrasing it:
+"stderr gains `WARN lance: brute-force search over 500000 rows`" is testable, "a warning
+is displayed" is not.
 
 ```python
 # ---- AFTER ----
 # Same script, unchanged. stderr gains one line:
 #   WARN lance: brute-force vector search over 500000 rows on column "vector";
 #   consider creating a vector index
-# The small corpus above stays silent, which is the part worth testing.
+# Once — not per batch, not per partition. The small dataset above stays silent,
+# which is the part worth testing.
 ```
 
 If the fix changes an API rather than a behaviour, show the call site both ways.

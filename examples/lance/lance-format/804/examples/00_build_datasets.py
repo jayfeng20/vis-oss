@@ -19,6 +19,13 @@ the timing gap in example 01 obvious rather than arguable.
     cd ~/Coding/lance/python
     uv run python <this file> --scale small
     uv run python <this file> --scale large
+
+Tutorial level: full — every step below is yours to write.
+
+Not run: at level full there is nothing to execute yet. Verified that
+lance.write_dataset, create_index and list_indices exist as used, and that
+benchmarks/dbpedia-openai/datagen.py is present and does the FixedSizeList conversion
+this file points at.
 """
 
 # TODO 1. imports: argparse, pathlib, time, numpy as np, pyarrow as pa, lance

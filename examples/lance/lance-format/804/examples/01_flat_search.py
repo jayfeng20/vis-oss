@@ -9,11 +9,16 @@ teaches the code path.
     cd ~/Coding/lance/python
     LANCE_LOG=warn uv run python <this file>
 
+Tutorial level: full — every step below is yours to write.
+
+Not run: at level full there is nothing to execute yet. What was verified is that the
+APIs named below exist at lance f603c551 — `nearest`, `explain_plan` and `use_index` on
+python/python/lance/dataset.py, and every rust file:line cited, each opened and read.
+The timings in TODO 4 are the point of the exercise and have not been measured.
+
 LANCE_LOG is read by init_logging, declared python/src/lib.rs:169. It sets the
 env_logger level for Rust log records, which go to stderr. Keep it on so that the
 absence of a warning is something you have observed rather than assumed.
-
-Tutorial level: full. Every step below is yours to write.
 """
 
 # TODO 1. Load the three datasets built by 00_build_datasets.py: small, large_noindex,
