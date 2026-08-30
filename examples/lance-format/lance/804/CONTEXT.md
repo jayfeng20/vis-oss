@@ -130,18 +130,20 @@ message anywhere else in `rust/` — that phrasing has exactly one hit in the tr
 
 **1. Should the threshold measure elapsed time, bytes scanned, or rows scanned?**
 Elapsed time is what a user feels, but it makes behaviour machine-dependent and the test
-flaky under CI load. Bytes and rows are deterministic. *Recommendation:* follow the FTS
-precedent and use a deterministic size measure; rows × dimensions is the honest cost model
+flaky under CI load. Bytes and rows are deterministic. *My reading:* follow the FTS
+precedent and use a deterministic size measure — rows × dimensions is the honest cost model
 for vector distance and, unlike bytes, does not vary with column encoding.
 
 **2. Should an explicit `use_index=False` stay silent?** It is a deliberate opt-out rather
 than a missing index, so warning is arguably noise — but it is also the flag used to
-measure recall against brute force, where the reminder may be welcome. *Recommendation:*
-silent. Someone who typed `use_index=False` knows what they asked for.
+measure recall against brute force, where the reminder may be welcome. *My reading:*
+silent, since someone who typed `use_index=False` knows what they asked for — but this is a
+guess about intent and worth asking on the issue.
 
 **3. `log::warn!` or `tracing::warn!`?** Per `python/src/tracing.rs` above, the choice
-decides whether a Python user sees a WARN or a reformatted INFO. *Recommendation:*
-`log::warn!`, matching the neighbouring fallback warning in `scanner.rs`. Worth raising on
+decides whether a Python user sees a WARN or a reformatted INFO. *My reading:*
+`log::warn!`, matching the neighbouring fallback warning in `scanner.rs` — but see *What I
+could not verify*, because the premise here is unobserved. Worth raising on
 the issue that the FTS warning may be less visible from Python than intended.
 
 ## Examples
@@ -185,3 +187,34 @@ cd python && make build && uv run pytest python/tests/test_log.py -x
 
 Python commands must go through `uv` — see `python/AGENTS.md`. `make build` is required
 after any Rust change, or you are running new Python against an old extension.
+
+## What I could not verify
+
+**The Python visibility claim in *Prior art* is inference, not observation.** I read
+`on_event` in `python/src/tracing.rs` and concluded that a `tracing::warn!` reaches a
+Python user at the `LANCE_TRACING` level rather than WARN. I never ran a flat FTS query
+over 1GB with `LANCE_LOG=warn` to watch what actually lands on stderr. If that inference
+is wrong, open question 3 dissolves and the FTS precedent should simply be copied. This is
+the single claim most worth checking before citing it on the issue.
+
+**No timings were measured.** The premise that brute force is dramatically slower at scale
+is standard and near-certain, but the ratio that belongs in a PR description is not in this
+study, because no large corpus was ever built. `examples/01_current.py` is written to
+produce it; nobody has run it.
+
+**None of the three example files has been executed.** They are written against APIs I
+read in the source (`nearest`, `explain_plan`, `create_index`, `list_indices`) and against
+lance's own `benchmarks/dbpedia-openai/datagen.py`, but the scripts themselves are
+unrun — expect to fix small things.
+
+**The threshold recommendation is a judgement with no data behind it.** Rows × dimensions
+is argued from the cost model, not from measurement, and I did not check whether Lance
+already tracks a suitable quantity at that point in the stream. If it does not, the
+counter may cost more than the warning is worth, which would change the answer.
+
+**Whether `use_index=False` should stay silent is a guess about intent.** It is worth
+asking on the issue rather than deciding in a PR.
+
+**Not checked:** whether anyone has attempted this before in a closed PR, and whether the
+maintainers have opinions recorded somewhere other than the issue — Discord, for instance,
+which `CONTRIBUTING.md` points contributors to.

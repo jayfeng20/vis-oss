@@ -3,8 +3,11 @@
 This is the spec for filling in a vis-oss study. `vis-oss <issue>` creates the directory
 and copies this file into it as `AGENTS.md`; everything after that is your job.
 
-A study exists so that someone who has never seen a codebase can understand one issue
-in it well enough to contribute. Judge every sentence you write against that.
+A study exists so that someone who has never seen a codebase can understand one issue in
+it well enough to start contributing. It is a head start, not an answer. You will get
+things wrong, especially on a complex issue, and the reader cannot cheaply tell which
+parts. So the standard is not "sound authoritative" — it is **be checkable**: cite what
+you read, and mark plainly what you inferred.
 
 ## What you are filling in
 
@@ -28,9 +31,11 @@ badly worded or assumes context, this is where you supply what it assumes.
 functions and files that produce it. This is half of the before/after pair and it must
 be concrete enough to reproduce.
 
-**What should happen.** The behaviour after the issue is resolved, stated precisely
-enough to test. "A warning is shown" is not enough; "one warning per query naming the
-column, and none for a small dataset or an indexed query" is.
+**What should happen.** Your reading of the behaviour the issue is asking for, stated
+precisely enough to test. "A warning is shown" is not enough; "one warning per query
+naming the column, and none for a small dataset or an indexed query" is. This is a
+reading, not a decision — the maintainers own what the fix should be, and where the issue
+is ambiguous say so here rather than resolving it silently.
 
 **Where the code is.** A reading order, not a file listing. Three to six locations,
 each as `path/to/file.rs:123` followed by why a newcomer is looking at it. Trace the
@@ -46,7 +51,9 @@ genuinely is none, write "none found" and say where you looked.
 
 **Open questions.** Decisions the issue does not settle and the implementer cannot
 avoid. Each needs what changes depending on the answer, and your recommendation, so the
-reader can proceed without waiting. *"What should the threshold be?"* is not an open
+reader can proceed without waiting. Write the recommendation as your reading and give the
+reason, so it can be argued with: "the sibling feature chose bytes, so bytes" invites a
+check, while "use bytes" asks to be obeyed. *"What should the threshold be?"* is not an open
 question. *"Time or bytes? Time is what users feel, but makes behaviour
 machine-dependent and the test flaky; the sibling feature chose bytes"* is. Do not
 manufacture these — if the issue is genuinely unambiguous, say so.
@@ -55,6 +62,12 @@ manufacture these — if the issue is genuinely unambiguous, say so.
 
 **How to verify.** The build, test and lint commands for the surfaces this touches,
 taken from the project's own docs rather than assumed.
+
+**What I could not verify.** Every claim above that rests on inference rather than
+something you read, plus code you looked for and could not find, plus questions worth
+putting to the maintainers. This section is what makes the rest of the study safe to
+trust, because it bounds it. Leaving it empty asserts that everything above is solid, so
+leave it empty only when that is true.
 
 ## Examples must show both sides
 
@@ -91,5 +104,7 @@ median; the first call pays for opening files and warming page cache" is a tutor
   If you pull mid-investigation, re-verify your references before finishing.
 - **Do not post anything to GitHub.** You investigate and write local files. Issue
   comments and pull requests are the user's to send.
-- **Say what you could not determine.** A study that admits an unknown is more useful
-  than one that papers over it.
+- **Say what you could not determine**, in the section that exists for it. A study that
+  admits an unknown is more useful than one that papers over it.
+- **Do not smooth over a confusing codebase.** If something took you three reads to
+  follow, say so — that is exactly what the next person needs warning about.
