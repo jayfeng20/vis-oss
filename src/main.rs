@@ -13,7 +13,7 @@
 use std::io::{IsTerminal, Write};
 use std::path::{Path, PathBuf};
 
-use anyhow::Result;
+use anyhow::{Context as _, Result};
 use clap::Parser;
 
 mod command;
@@ -40,7 +40,9 @@ use template::Tutorial;
 )]
 struct Cli {
     /// Issue number.
-    #[arg(required_unless_present_any = ["install_command", "set_root", "update"])]
+    #[arg(required_unless_present_any = [
+        "install_command", "set_root", "update", "sync_upstream"
+    ])]
     number: Option<u64>,
     /// Root to file this study under, overriding the saved root for this run.
     ///
@@ -67,7 +69,10 @@ struct Cli {
     /// Remember where studies are filed, for every later run, then exit.
     #[arg(long, value_name = "PATH")]
     set_root: Option<PathBuf>,
-    /// Fast-forward the checkout onto the canonical remote before writing the study.
+    /// Fast-forward the checkout onto the canonical remote.
+    ///
+    /// With an issue number, it runs before the study is written. On its own, it syncs
+    /// and exits.
     #[arg(long)]
     sync_upstream: bool,
     /// Steer the agent: prior art to look at, an angle to take. Repeatable.
@@ -95,10 +100,12 @@ fn main() -> Result<()> {
     if cli.install_command {
         return install_command();
     }
+    let Some(number) = cli.number else {
+        // Only reachable with --sync-upstream, which clap allows without a number.
+        return sync_only(cli.source.as_deref());
+    };
     let opts = InitOptions {
-        number: cli
-            .number
-            .expect("clap requires a number unless --install-command"),
+        number,
         repo: cli.repo,
         base: cli.base,
         tutorial: cli.tutorial,
@@ -155,6 +162,27 @@ fn install_command() -> Result<()> {
     println!();
     println!("now: /vis-oss 804 in your agent, from inside the project's clone");
     Ok(())
+}
+
+/// `--sync-upstream` with no issue number: bring the checkout up to date and stop.
+fn sync_only(source: Option<&Path>) -> Result<()> {
+    let cwd = std::env::current_dir()?;
+    let source = match source {
+        Some(p) => p.to_path_buf(),
+        None => git::repo_root(&cwd)
+            .context("not inside a git repository — cd into your clone, or pass --source")?,
+    };
+    let Some(stale) = git::staleness(&cwd) else {
+        anyhow::bail!("no usable remote to sync from");
+    };
+    if stale.behind == 0 {
+        println!("already up to date with {}", stale.reference());
+        return Ok(());
+    }
+    if sync(&stale, &source) {
+        return Ok(());
+    }
+    anyhow::bail!("sync it yourself, then run vis-oss again");
 }
 
 /// Point at a study that already exists, and say whether the code has moved under it.
