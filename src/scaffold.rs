@@ -107,8 +107,7 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<(PathBuf, Vec<String>)> {
             dir.display()
         );
     }
-    std::fs::create_dir_all(dir.join("examples"))
-        .with_context(|| format!("creating {}", dir.display()))?;
+    std::fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
 
     let context = template::context_md(&template::Context {
         repo: &repo,

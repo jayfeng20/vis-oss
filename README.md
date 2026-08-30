@@ -60,9 +60,9 @@ lands next to the study, investigates the codebase, and writes the study. You ge
 
 ```
 ~/Coding/OSS-study/lance/lance-format/804/
-  CONTEXT.md    the study — what the issue is, where the code is, what to decide
-  AGENTS.md     the contract the agent followed
-  examples/     runnable probes of today's behaviour, each ending in what changes
+  CONTEXT.md          the study — what the issue is, where the code is, what to decide
+  AGENTS.md           the contract the agent followed
+  00_*.py, 01_*.py    runnable probes of today, each ending in what changes
 ```
 
 Studies are filed as `<root>/<repo-name>/<owner>/<issue>/`, so the root stays browsable by
@@ -97,7 +97,7 @@ asks before writing, because a study describes code at one commit.
 | `--set-root <path>` | Remember a root for every later run, and exit |
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
-| `--tutorial full\|partial\|none` | How much of the examples you write yourself. `full` (default) is `TODO`s, `partial` leaves stubs, `none` is complete code |
+| `--tutorial full\|partial\|none` | How much of the examples you write yourself. `none` (default) is complete code, `partial` leaves stubs, `full` is `TODO`s |
 | `--install-command` | (Re)install the `/vis-oss` command and exit |
 
 ## License

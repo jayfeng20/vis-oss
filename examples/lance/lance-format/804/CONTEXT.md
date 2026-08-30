@@ -4,7 +4,7 @@ https://github.com/lance-format/lance/issues/804
 open · opened 2023-04-24 · good first issue · help wanted · A-python · rust
 
 > Studied against `f603c5516b41c3aae4cb0569b4c96a5253078d81` in `~/Coding/lance`.  
-> Examples are at tutorial level **full** — every line is yours to write, from `TODO`s. See `AGENTS.md`.
+> Examples are at tutorial level **none** — complete and runnable as shipped. See `AGENTS.md`.
 
 > **Written by an agent, and not reviewed.** It is a head start on understanding
 > this issue, not an answer to it. Check any file reference before you rely on it,
@@ -141,24 +141,26 @@ the issue that the FTS warning may be less visible from Python than intended.
 
 Run from `~/Coding/lance/python` in both cases.
 
-**`examples/00_build_datasets.py`** — builds the datasets the probe needs: one small enough that
-brute force is the right call and must stay silent, one large enough that it is not.
-Offers real 1536-dim OpenAI embeddings via lance's own
-`benchmarks/dbpedia-openai/datagen.py`, with a synthetic fallback.
+Both were run; see the provenance line in each for the machine and the output.
+
+**`00_build_datasets.py`** — writes three datasets: a 2k one where brute force is the
+right call and must stay silent, and two 20k ones identical but for an IVF_PQ index, so
+any difference is attributable to the index alone.
 
 ```sh
-uv run python <study>/examples/00_build_datasets.py --scale small
-uv run python <study>/examples/00_build_datasets.py --scale large --real
+uv run --frozen python <study>/00_build_datasets.py
 ```
 
-**`examples/01_flat_search.py`** — the probe. Times the same query against indexed and
-unindexed copies of the same data, proves which path ran with `explain_plan`, and shows
-that nothing reaches stderr at any size. Its comments trace each call down to the
-declaration that does the work, and its `AFTER` block says what changes.
+**`01_flat_search.py`** — the probe. Times the same query four ways, asserts which path
+the plan actually took, and shows that nothing reaches stderr. Its comments trace each
+call down to the declaration that does the work, and its `AFTER` block says what changes.
 
 ```sh
-LANCE_LOG=warn uv run python <study>/examples/01_flat_search.py
+LANCE_LOG=warn uv run --frozen python <study>/01_flat_search.py
 ```
+
+It reports `flat / indexed at 20k rows: 0.6x` — the index loses at this size. That is the
+issue's own caveat, measured.
 
 ## How to verify
 
@@ -182,15 +184,17 @@ over 1GB with `LANCE_LOG=warn` to watch what actually lands on stderr. If that i
 is wrong, open question 3 dissolves and the FTS precedent should simply be copied. This is
 the single claim most worth checking before citing it on the issue.
 
-**No timings were measured.** The premise that brute force is dramatically slower at scale
-is standard and near-certain, but the ratio that belongs in a PR description is not in this
-study, because no large dataset was ever built. `examples/01_flat_search.py` is written to
-produce it; nobody has run it.
+**The crossover point is not known.** Both examples were run (see their provenance lines),
+but only at 20k rows x 128 dims, where the index is *slower* than brute force — 0.6x. So
+the measurement confirms the issue's premise about small datasets and says nothing about
+where a threshold belongs. Somebody needs to run this at 100k, 1M and 10M to find where
+the index starts winning; that number is the one a threshold has to sit above, and it is
+missing.
 
-**Neither example file has been executed** — see the provenance line in each. They are
-written against APIs read in the source and against lance's own
-`benchmarks/dbpedia-openai/datagen.py`, but the scripts themselves are unrun; expect to
-fix small things.
+**The dimension is unrepresentative.** 128 dims was chosen so the example runs in seconds.
+Real embedding workloads are 768-1536, where flat search costs 6-12x more per row and the
+crossover arrives much earlier. Rerun with the dbpedia corpus before trusting any
+threshold derived from these numbers.
 
 **The threshold recommendation is a judgement with no data behind it.** Rows × dimensions
 is argued from the cost model, not from measurement, and I did not check whether Lance
@@ -209,7 +213,7 @@ which `CONTRIBUTING.md` points contributors to.
 No API changes. `to_table(nearest=...)` and `LanceDataset.nearest` keep their signatures;
 this is a behaviour change, visible only on stderr.
 
-Running `examples/01_flat_search.py` unchanged, the large unindexed query gains one line:
+Running `01_flat_search.py` unchanged, a sufficiently large unindexed query gains one line:
 
 ```
 WARN lance::io::exec::knn: brute-force vector search scored 500000 rows on column
