@@ -7,7 +7,7 @@ does this do today, where do I start reading, has this project already solved so
 like it, what did the maintainers leave undecided. vis-oss creates a directory for one
 issue, an agent fills it in, and you get a written answer you can keep.
 
-**IMPORTANT**: An AI agent can and absolutely will make mistakes especially on complex issues. The study it 
+**IMPORTANT**: An AI agent can absolutely make mistakes especially on complex issues. The study it 
 generates helps contributors familiarize themselves with issues faster, serves as a helpful starting point,
 and is not meant to "generate the final solution for the issue".
 
