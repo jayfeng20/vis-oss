@@ -1,4 +1,4 @@
-//! `vis-oss init` — create the directory an agent fills in.
+//! Creating the directory an agent fills in.
 //!
 //! Everything here is mechanical: read the issue, read the checkout, write the
 //! skeleton. No judgement is applied, because judgement is the agent's job and this

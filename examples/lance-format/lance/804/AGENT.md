@@ -1,6 +1,6 @@
 # The agent contract
 
-This is the spec for filling in a vis-oss study. `vis-oss init` creates the directory
+This is the spec for filling in a vis-oss study. `vis-oss <issue>` creates the directory
 and copies this file into it as `AGENT.md`; everything after that is your job.
 
 A study exists so that someone who has never seen a codebase can understand one issue
