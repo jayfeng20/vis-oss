@@ -4,7 +4,12 @@ https://github.com/lance-format/lance/issues/804
 open · opened 2023-04-24 · good first issue · help wanted · A-python · rust
 
 > Studied against `f603c5516b41c3aae4cb0569b4c96a5253078d81` in `~/Coding/lance`.  
-> Examples are in **tutorial** mode. See `AGENT.md` for what that means.
+> Examples are at tutorial level **full** — every line is yours to write, from `TODO`s. See `AGENTS.md`.
+
+> **Written by an agent, and not reviewed.** It is a head start on understanding
+> this issue, not an answer to it. Check any file reference before you rely on it,
+> and treat the reasoning as a first draft to argue with — the maintainers own
+> what the fix should be.
 
 ---
 
