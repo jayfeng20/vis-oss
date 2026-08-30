@@ -67,6 +67,12 @@ struct Cli {
     /// Fast-forward the checkout onto the canonical remote before writing the study.
     #[arg(long)]
     sync_upstream: bool,
+    /// Steer the agent: prior art to look at, an angle to take. Repeatable.
+    #[arg(long, value_name = "TEXT")]
+    note: Vec<String>,
+    /// Archive an existing study and write a fresh skeleton.
+    #[arg(long)]
+    redo: bool,
 }
 
 fn main() -> Result<()> {
@@ -91,6 +97,8 @@ fn main() -> Result<()> {
         base: cli.base,
         tutorial: cli.tutorial,
         source: cli.source,
+        notes: cli.note,
+        redo: cli.redo,
     };
 
     let plan = scaffold::plan(&opts)?;

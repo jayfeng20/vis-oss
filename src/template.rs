@@ -48,6 +48,8 @@ pub struct Context<'a> {
     pub source: &'a str,
     pub commit: &'a str,
     pub tutorial: Tutorial,
+    /// Steering from whoever asked for the study.
+    pub notes: &'a [String],
 }
 
 /// The skeleton of a study.
@@ -74,6 +76,16 @@ pub fn context_md(c: &Context) -> String {
         "(unknown)"
     } else {
         c.commit
+    };
+    let notes = if c.notes.is_empty() {
+        String::new()
+    } else {
+        let items = c
+            .notes
+            .iter()
+            .map(|n| format!("- {}\n", n.trim()))
+            .collect::<String>();
+        format!("## Start from\n\n{items}\n<!-- Supplied by whoever asked for this study. Treat as a lead, not a conclusion:\n     verify it before repeating it, and say in the study if it did not hold. -->\n\n")
     };
     let body = if c.body.trim().is_empty() {
         "_(the issue has no body)_".to_string()
@@ -103,7 +115,7 @@ pub fn context_md(c: &Context) -> String {
          \n\
          ---\n\
          \n\
-         ## What this actually is\n\
+         {notes}## What this actually is\n\
          \n\
          <!-- Plain language, for someone who has not read the issue. -->\n\
          \n\
@@ -156,5 +168,6 @@ pub fn context_md(c: &Context) -> String {
         mode = mode,
         mode_describes = mode_describes,
         body = body,
+        notes = notes,
     )
 }

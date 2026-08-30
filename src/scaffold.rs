@@ -23,6 +23,10 @@ pub struct InitOptions {
     pub tutorial: Tutorial,
     /// Checkout to study. Defaults to the enclosing repository.
     pub source: Option<PathBuf>,
+    /// Steering for the agent: prior art to look at, an angle to take.
+    pub notes: Vec<String>,
+    /// Archive an existing study and write a fresh skeleton.
+    pub redo: bool,
 }
 
 /// Everything `init` needs to know before it is willing to write anything.
@@ -125,11 +129,36 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<Created> {
     // the study again, or to check whether it has gone stale. It is not an error, and
     // the existing work is never overwritten.
     if let Ok(existing) = std::fs::read_to_string(dir.join("CONTEXT.md")) {
-        return Ok(Created::Existing {
-            pinned: pinned_commit(&existing),
-            head: git::head_commit(&source),
-            dir,
-        });
+        if opts.redo {
+            // Move it aside rather than deleting: a study is hours of reading, and the
+            // commit it was pinned to names it usefully.
+            let stamp = pinned_commit(&existing).map_or_else(
+                || "previous".to_string(),
+                |c| c.chars().take(9).collect::<String>(),
+            );
+            let archive = dir.with_file_name(format!(
+                "{}.{stamp}",
+                dir.file_name().unwrap_or_default().to_string_lossy()
+            ));
+            if archive.exists() {
+                bail!(
+                    "{} already exists — move or delete it first",
+                    archive.display()
+                );
+            }
+            std::fs::rename(&dir, &archive)
+                .with_context(|| format!("archiving to {}", archive.display()))?;
+            notes.push(format!(
+                "archived the previous study to {}",
+                archive.display()
+            ));
+        } else {
+            return Ok(Created::Existing {
+                pinned: pinned_commit(&existing),
+                head: git::head_commit(&source),
+                dir,
+            });
+        }
     }
     std::fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
 
@@ -145,6 +174,7 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<Created> {
         source: &source.to_string_lossy(),
         commit: &commit,
         tutorial: opts.tutorial,
+        notes: &opts.notes,
     });
     std::fs::write(dir.join("CONTEXT.md"), context)?;
     std::fs::write(dir.join("AGENTS.md"), AGENT_CONTRACT)?;

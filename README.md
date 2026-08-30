@@ -85,6 +85,13 @@ vis-oss 804
 Same directory, same contract, but it stops after creating them — `CONTEXT.md` arrives as
 a markdown file with empty headings and the issue body, and you fill it in yourself.
 
+If you already know something useful, say so up front — `--note` puts it at the top of
+the study as a lead for the agent to verify:
+
+```sh
+vis-oss 804 --note "flat FTS already warns like this: inverted/index/flat_search.rs:449"
+```
+
 Running it again for an issue you have already studied never overwrites anything. It
 prints where the study is, and whether the checkout has moved since it was written:
 
@@ -120,6 +127,8 @@ than the one you have checked out.
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
 | `--tutorial full\|partial\|none` | How much of the examples you write yourself. `none` (default) is complete code, `partial` leaves stubs, `full` is `TODO`s |
+| `--note <text>` | A lead for the agent to verify. Repeatable |
+| `--redo` | Archive an existing study and start fresh |
 | `--sync-upstream` | Fast-forward the checkout onto the canonical remote before writing |
 | `--install-command` | (Re)install the `/vis-oss` command and exit |
 
