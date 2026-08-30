@@ -55,15 +55,18 @@ how small your example is. So:
 - **Do not build a trained index, a large generated dataset, or anything else the project
   would call a benchmark.**
 
-There is one mechanical check, and only for Rust: `cargo check` the shared study project
-once your file is in it, and fix what it reports. For Python and anything else interpreted
-there is nothing worth running — a syntax check catches what you would not get wrong, and
-anything stronger means importing the project.
+Nothing is compiled either. Building a Rust example against a large workspace means
+compiling its whole dependency graph first, which for a project pulling in Arrow and
+DataFusion is around nine hundred crates before the compiler reaches your file.
 
-Otherwise the check is reading. Open the file, find the symbol, confirm the signature — an
-API you read is as real as one you called. Say what you checked in each file's provenance
-line: for Rust that it compiles, otherwise the paths you read. Real paths, never just a
-claim that you were careful.
+So the check is reading. Open the file, find the symbol, confirm the signature — an API you
+read is as real as one you called. Say what you read in each file's provenance line, with
+the commit: real paths, never just a claim that you were careful. Say plainly that the file
+was neither run nor compiled, so the reader expects a first error rather than a clean build.
+
+What you owe instead is code that matches its tutorial level — complete at `none`, stubs
+and scaffolding at `partial` (the default), `TODO`s at `full`. That level is the promise
+you are making about how finished the file is, and it is the one you can keep.
 
 Give each example what it needs to be run by someone else: the exact command and directory,
 the project's own tooling (`uv run`, `poetry run`), and for Rust the shared Cargo project
