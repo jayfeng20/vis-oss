@@ -86,6 +86,45 @@ Write them in the language the behaviour is *observed* in, which is not always t
 language the fix lands in. For a Rust library with Python bindings, a user meets the slow
 query in Python; the example is Python, and its annotations point down into the Rust.
 
+### Small and fast, first time
+
+An example earns its place by landing the reader in the right code path, not by
+reproducing the issue's headline number. Write the **smallest input that still reaches
+that path**, and hold the study to a budget: no single file over about thirty seconds,
+and all of them together under two minutes on the machine you are on. The budget is run
+time — a first `cargo build` against a large workspace is minutes and there is nothing to
+be done about that except say so, as below.
+
+This is cheap to obey, because scale is almost never what the reader needs. A query over
+a thousand rows takes the same branch as one over a million, and the branch is what is
+being taught.
+
+The failure mode the budget exists to prevent is a hunt for a number. You write a probe,
+the measurement comes out unconvincing, so you grow the data, retrain the index, add
+repeats, and try again — each attempt costing minutes, none of it changing what the reader
+learns, and all of it spent before the study has a single section written. Concretely:
+
+- **Do not write throwaway scripts to find a size or a parameter that makes a result come
+  out.** If your first honest run does not show what you expected, that *is* a finding —
+  write it down and move on. An issue whose premise does not reproduce at small scale is
+  worth knowing about.
+- **Do not build anything the project would itself call a benchmark** — a trained index, a
+  large generated dataset, a full load of real data. Those cost minutes, and they belong
+  to the user.
+- If a behaviour genuinely only appears at a scale you cannot reach inside the budget,
+  keep the small file, say plainly where the claim is made that it is unmeasured, and
+  offer the heavy run.
+
+### The heavy run is a conversation, not a file
+
+Some questions really do need scale: a query that is only slow at a million rows, a build
+that only regresses on a big workspace. Finish the study without them. Then, in your reply
+to the user — not in the study — say in one line what a longer run would add, roughly what
+it would cost, and that you will do it if asked.
+
+Never start one unprompted. A study that arrives in two minutes and offers a ten-minute
+measurement is worth more than one that takes twelve minutes and never asked.
+
 ### Which files to create
 
 Two roles. Names are yours to choose — pick what the project would call the thing — but
@@ -97,7 +136,8 @@ every file must be recognisably one of these, numbered in the order it is run.
 | **probe** — one behaviour worth watching on its own, running against today's code | `01_`, `02_`, … | as many as there are genuinely separate behaviours |
 
 Check `test_data/`, `benchmarks/` and any datagen scripts before writing setup: reusing
-the maintainers' fixtures makes your numbers comparable to theirs. Split probes when the
+what the maintainers already ship makes your numbers comparable to theirs, and costs you
+nothing to build. Split probes when the
 behaviours differ — a slow read and a wrong result are two files; timing and plan
 inspection of one query are one file.
 
@@ -129,18 +169,30 @@ says nothing.
 
 Tutorial level: none — this file is complete.
 
-Verified: run 2026-08-30 against lance f603c551, 500k rows x 1536 dims.
-    flat 1841ms · indexed 12ms · ratio 153x · stderr empty
+Verified: run 2026-08-30 against lance f603c551, 20k rows x 128 dims, 3.1s total.
+    flat 14.6ms · indexed 24.7ms · plan flat vs ANN · stderr empty
+
+At this size the index is *slower* than scanning everything, so the ratio the issue
+assumes is not visible here and this file does not claim it. The plan shapes are the
+part that holds at any size, and they are what the probe asserts on.
 """
 ```
+
+That last paragraph is not an apology. Writing down the measurement you actually got,
+including when it undercuts the issue, is the whole value of having run the thing.
 
 If you could not run it, say that instead, and say why: `Not run: needs a 6GB download.
 The numbers below are predicted, not measured.` Never leave provenance out — an example
 with no provenance line is indistinguishable from one that was never checked.
 
-**Assert, do not print.** A claim the file makes about the project should fail loudly
-when it stops being true. `assert flat_ms > indexed_ms * 10` teaches and defends itself;
-a `print` rots silently.
+**Assert what is structural; print what is not.** A claim the file makes about the
+project should fail loudly when it stops being true — but only a claim that holds on any
+machine at any size. Which plan is chosen, which operator appears in it, whether a warning
+reached stderr, what a call returns: assert those, and they defend themselves. Durations,
+ratios and recall move with the hardware and the row count, so print them next to the
+numbers you measured and let the reader compare. `assert flat_ms > indexed_ms * 10` is not
+a check, it is a flake you handed to someone else — and tuning the input until it passes
+is how an afternoon disappears.
 
 ### Making them runnable
 
