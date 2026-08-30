@@ -26,13 +26,10 @@ Losing a whole investigation to one malformed field is the worst possible outcom
 
 Quality is enforced separately by `vis-oss validate`, which is where strictness lives.
 
-## Anchors are the load-bearing idea
+## Anchors: how a study points at code
 
-A study is a set of claims about **where things are** in a codebase. Those claims rot
-on every rebase, and the failure is silent: a line number that pointed at the function
-you cared about now points at unrelated code, and the reader believes it.
-
-So every anchor carries a `symbol` as well as a `line`:
+Most of a study's value is in telling the reader *where to look*. An anchor is one such
+pointer, and it carries a `symbol` as well as a `line`:
 
 ```json
 {

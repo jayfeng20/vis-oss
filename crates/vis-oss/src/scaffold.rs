@@ -4,20 +4,28 @@
 //! well-formed but empty [`Study`]. No judgement is applied, because judgement is the
 //! agent's job and this tool must stay testable and deterministic.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{bail, Context, Result};
 use serde_json::Value;
 
-use crate::anchor;
+use crate::git::{self, Staleness};
 use crate::study::{Extra, Issue, Mode, Pin, Study, SCHEMA_VERSION};
+
+/// Directory, relative to the repository root, that study directories live in.
+///
+/// Inside the repo so a study sits next to the code it describes, and so paths in it
+/// are short. Excluded via `.git/info/exclude` rather than `.gitignore`, because a
+/// contributor's scratch work must not appear in the diff they send upstream.
+pub const SCRATCH_DIR: &str = "vis-oss-scratch";
 
 pub struct InitOptions {
     pub number: u64,
     /// `owner/name`. Inferred from the git remotes when absent.
     pub repo: Option<String>,
-    pub out: PathBuf,
+    /// Where to write. Defaults to `<repo root>/vis-oss-scratch/<number>/`.
+    pub out: Option<PathBuf>,
     pub mode: Mode,
     /// Checkout the anchors will refer to. Defaults to the enclosing repository.
     pub source: Option<PathBuf>,
@@ -29,29 +37,65 @@ pub struct InitOutcome {
     pub notes: Vec<String>,
 }
 
-pub fn init(opts: &InitOptions) -> Result<InitOutcome> {
-    let mut notes = Vec::new();
+/// Everything `init` needs to know before it is willing to write anything.
+pub struct Plan {
+    pub source: PathBuf,
+    pub repo: String,
+    pub dir: PathBuf,
+    pub staleness: Option<Staleness>,
+    pub notes: Vec<String>,
+}
 
+/// Work out where the study goes and whether the checkout is worth studying yet.
+///
+/// Split from [`init`] so the caller can put a decision in front of the user — a study
+/// written against a checkout that is hundreds of commits behind describes code that
+/// no longer exists, and no amount of care downstream repairs that.
+pub fn plan(opts: &InitOptions) -> Result<Plan> {
+    let mut notes = Vec::new();
     let cwd = std::env::current_dir()?;
     let source = match &opts.source {
         Some(p) => p.clone(),
-        None => anchor::repo_root(&cwd).context(
-            "not inside a git repository — run vis-oss from a checkout, or pass --source",
+        None => git::repo_root(&cwd).context(
+            "not inside a git repository — cd into your clone of the project, or pass --source",
         )?,
     };
 
-    let repo = match &opts.repo {
-        Some(r) => r.clone(),
-        None => anchor::repo_slug(&source)
-            .context("could not infer the repository from git remotes — pass --repo owner/name")?,
-    };
-    if opts.repo.is_none() {
+    let repo = if let Some(r) = &opts.repo {
+        r.clone()
+    } else {
+        let slug = git::repo_slug(&source)
+            .context("could not infer the repository from git remotes — pass --repo owner/name")?;
         notes.push(format!(
-            "inferred repo {repo} from git remotes (upstream preferred)"
+            "repo {slug}, from the git remotes (upstream preferred)"
         ));
-    }
+        slug
+    };
 
-    let commit = anchor::head_commit(&source).unwrap_or_default();
+    let dir = opts
+        .out
+        .clone()
+        .unwrap_or_else(|| source.join(SCRATCH_DIR).join(opts.number.to_string()));
+
+    Ok(Plan {
+        source,
+        repo,
+        dir,
+        staleness: git::staleness(&cwd),
+        notes,
+    })
+}
+
+pub fn init(opts: &InitOptions, plan: Plan) -> Result<InitOutcome> {
+    let Plan {
+        source,
+        repo,
+        dir,
+        mut notes,
+        ..
+    } = plan;
+
+    let commit = git::head_commit(&source).unwrap_or_default();
     if commit.is_empty() {
         notes.push("could not read HEAD — pin.commit left empty".to_string());
     }
@@ -87,10 +131,9 @@ pub fn init(opts: &InitOptions) -> Result<InitOutcome> {
         extra: Extra::default(),
     };
 
-    let dir = &opts.out;
     if dir.join("study.json").exists() {
         bail!(
-            "{} already contains a study.json — refusing to overwrite",
+            "{} already contains a study.json — delete it or pass a different directory",
             dir.display()
         );
     }
@@ -102,11 +145,22 @@ pub fn init(opts: &InitOptions) -> Result<InitOutcome> {
     )?;
     std::fs::write(dir.join("README.md"), readme(&study))?;
 
-    Ok(InitOutcome {
-        dir: dir.clone(),
-        study,
-        notes,
-    })
+    // Only meaningful when the study lives inside the repository it describes.
+    if dir.starts_with(&source) {
+        match git::ensure_ignored(&source, &dir.join("study.json")) {
+            git::Excluded::Added(pattern) => notes.push(format!(
+                "excluded {pattern} locally (info/exclude, not .gitignore) — verified ignored"
+            )),
+            git::Excluded::Already => {}
+            git::Excluded::Failed(reason) => notes.push(format!(
+                "WARNING: {} is NOT ignored by git ({reason}). \
+                 Exclude it yourself before you commit.",
+                dir.display()
+            )),
+        }
+    }
+
+    Ok(InitOutcome { dir, study, notes })
 }
 
 fn readme(study: &Study) -> String {
@@ -198,9 +252,4 @@ fn fetch_issue(repo: &str, number: u64) -> Result<Issue> {
         body: v["body"].as_str().map(ToString::to_string),
         extra: Extra::default(),
     })
-}
-
-/// Where `init` should write when the user does not say.
-pub fn default_out(number: u64) -> PathBuf {
-    Path::new(&format!("study-{number}")).to_path_buf()
 }

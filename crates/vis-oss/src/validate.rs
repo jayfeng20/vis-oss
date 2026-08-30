@@ -102,7 +102,7 @@ fn check_pin(study: &Study, out: &mut Vec<Diagnostic>) {
         return;
     }
     let root = Path::new(&study.pin.root);
-    if let Some(head) = anchor::head_commit(root) {
+    if let Some(head) = crate::git::head_commit(root) {
         let pinned = study.pin.commit.trim();
         // Compare on the shorter of the two so an abbreviated pin still matches.
         let n = pinned.len().min(head.len());

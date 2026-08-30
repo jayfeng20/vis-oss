@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
+use vis_oss::git::Staleness;
 use vis_oss::render::{self, RenderOpts, Section};
 use vis_oss::scaffold::{self, InitOptions};
 use vis_oss::study::{Mode, Study};
@@ -41,12 +42,11 @@ enum Command {
     Init {
         /// Issue number.
         number: u64,
+        /// Directory to create. Defaults to `<repo root>/vis-oss-scratch/<number>/`.
+        dir: Option<PathBuf>,
         /// `owner/name`. Inferred from the git remotes when omitted.
         #[arg(long)]
         repo: Option<String>,
-        /// Directory to create. Defaults to `study-<number>`.
-        #[arg(long)]
-        out: Option<PathBuf>,
         /// Checkout the anchors refer to. Defaults to the enclosing repository.
         #[arg(long)]
         source: Option<PathBuf>,
@@ -56,6 +56,9 @@ enum Command {
         /// Emit comment-and-TODO exercises in examples. The default.
         #[arg(long)]
         tutorial: bool,
+        /// Proceed without asking, even if the checkout is behind upstream.
+        #[arg(long, short = 'y')]
+        yes: bool,
     },
 
     /// Check a study for completeness, and for drift against the working tree.
@@ -106,12 +109,13 @@ fn main() -> Result<()> {
     match Cli::parse().command {
         Command::Init {
             number,
+            dir,
             repo,
-            out,
             source,
             solution,
             tutorial: _,
-        } => cmd_init(number, repo, out, source, solution),
+            yes,
+        } => cmd_init(number, dir, repo, source, solution, yes),
         Command::Validate { path } => cmd_validate(&path),
         Command::Render {
             path,
@@ -133,15 +137,16 @@ fn main() -> Result<()> {
 
 fn cmd_init(
     number: u64,
+    dir: Option<PathBuf>,
     repo: Option<String>,
-    out: Option<PathBuf>,
     source: Option<PathBuf>,
     solution: bool,
+    yes: bool,
 ) -> Result<()> {
     let opts = InitOptions {
         number,
         repo,
-        out: out.unwrap_or_else(|| scaffold::default_out(number)),
+        out: dir,
         mode: if solution {
             Mode::Solution
         } else {
@@ -149,7 +154,15 @@ fn cmd_init(
         },
         source,
     };
-    let outcome = scaffold::init(&opts)?;
+    let plan = scaffold::plan(&opts)?;
+
+    if let Some(stale) = plan.staleness.as_ref().filter(|s| s.behind > 0) {
+        if !confirm_stale(stale, &plan.source, yes)? {
+            return Ok(());
+        }
+    }
+
+    let outcome = scaffold::init(&opts, plan)?;
     for note in &outcome.notes {
         eprintln!("note: {note}");
     }
@@ -159,8 +172,48 @@ fn cmd_init(
     println!("  examples/    runnable before/after files go here");
     println!("  README.md    what this directory is");
     println!();
-    println!("next: point an agent at it, then `vis-oss validate {dir}`");
+    println!("next: point an agent at it, then `vis-oss render {dir}`");
     Ok(())
+}
+
+/// Warn that the checkout is behind, and let the user go sync instead.
+///
+/// A study written against a stale checkout documents code that upstream has already
+/// changed, and every line number in it is wrong in a way that is invisible later. That
+/// is worth interrupting for. Returns whether to proceed.
+fn confirm_stale(stale: &Staleness, source: &Path, yes: bool) -> Result<bool> {
+    let reference = stale.reference();
+    eprintln!(
+        "warning: this checkout is {} commit(s) behind {reference}.",
+        stale.behind
+    );
+    eprintln!("         A study written now will describe code that has already moved.");
+    eprintln!();
+    eprintln!("  to sync first:");
+    eprintln!("    git -C {} fetch {}", source.display(), stale.remote);
+    eprintln!(
+        "    git -C {} merge --ff-only {reference}",
+        source.display()
+    );
+    eprintln!();
+
+    if yes {
+        eprintln!("proceeding anyway (--yes)");
+        return Ok(true);
+    }
+    if !std::io::stdin().is_terminal() {
+        eprintln!("proceeding anyway (not a terminal; pass --yes to silence this)");
+        return Ok(true);
+    }
+    eprint!("Continue with the stale checkout? [y/N] ");
+    std::io::stderr().flush()?;
+    let mut answer = String::new();
+    std::io::stdin().read_line(&mut answer)?;
+    if matches!(answer.trim().to_lowercase().as_str(), "y" | "yes") {
+        return Ok(true);
+    }
+    eprintln!("stopped. Sync, then run vis-oss init again.");
+    Ok(false)
 }
 
 fn cmd_validate(path: &Path) -> Result<()> {
