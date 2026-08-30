@@ -5,7 +5,7 @@
 //! structure — and so a human reading a half-finished study can see what is missing.
 
 /// The agent contract, compiled in so a study directory is self-contained.
-pub const AGENT_CONTRACT: &str = include_str!("../../../docs/agent-contract.md");
+pub const AGENT_CONTRACT: &str = include_str!("../docs/agent-contract.md");
 
 pub struct Context<'a> {
     pub repo: &'a str,

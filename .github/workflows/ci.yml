@@ -24,13 +24,13 @@ jobs:
         run: cargo fmt --all --check
 
       - name: Build
-        run: cargo build --workspace --all-targets
+        run: cargo build --all-targets
 
       - name: Clippy
-        run: cargo clippy --workspace --all-targets
+        run: cargo clippy --all-targets
 
       - name: Test
-        run: cargo test --workspace
+        run: cargo test
 
       - name: The CLI must start
-        run: cargo run -q -p vis-oss -- --help > /dev/null
+        run: cargo run -q -- --help > /dev/null

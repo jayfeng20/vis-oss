@@ -1,17 +1,20 @@
-[workspace]
-resolver = "2"
-members = ["crates/vis-oss"]
-
-[workspace.package]
+[package]
+name = "vis-oss"
+description = "Understand an open-source issue before you try to fix it"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/jayfeng20/vis-oss"
 
-[workspace.lints.rust]
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+serde_json = "1"
+
+[lints.rust]
 unused = { level = "deny", priority = -1 }
 
-[workspace.lints.clippy]
+[lints.clippy]
 all = { level = "deny", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 module_name_repetitions = "allow"
