@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use clap::Parser;
 
+mod command;
 mod git;
 mod scaffold;
 mod template;
@@ -37,7 +38,8 @@ use scaffold::InitOptions;
 )]
 struct Cli {
     /// Issue number.
-    number: u64,
+    #[arg(required_unless_present = "install_command")]
+    number: Option<u64>,
     /// Base directory to file the study under. Defaults to `~/vis-oss`.
     ///
     /// The study lands at `<base>/<owner>/<name>/<number>/` either way.
@@ -54,12 +56,20 @@ struct Cli {
     /// Proceed without asking, even if the checkout is behind upstream.
     #[arg(long, short = 'y')]
     yes: bool,
+    /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
+    #[arg(long)]
+    install_command: bool,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+    if cli.install_command {
+        return install_command();
+    }
     let opts = InitOptions {
-        number: cli.number,
+        number: cli
+            .number
+            .expect("clap requires a number unless --install-command"),
         repo: cli.repo,
         base: cli.base,
         solution: cli.solution,
@@ -80,10 +90,29 @@ fn main() -> Result<()> {
     let dir = dir.display();
     println!("created {dir}");
     println!("  CONTEXT.md   the study — an agent fills in the empty sections");
-    println!("  AGENT.md     what a good study contains");
+    println!("  AGENTS.md    what a good study contains");
     println!("  examples/    today's behaviour, and the target");
     println!();
-    println!("next: point an agent at {dir} and tell it to follow AGENT.md");
+    println!("next: /vis-oss in your agent, or tell it to follow {dir}/AGENTS.md");
+    Ok(())
+}
+
+fn install_command() -> Result<()> {
+    let written = command::install()?;
+    if written.is_empty() {
+        let home = std::env::var("HOME").unwrap_or_default();
+        eprintln!("no agent command directory found. Looked for:");
+        for dir in command::candidates(Path::new(&home)) {
+            eprintln!("  {}", dir.display());
+        }
+        eprintln!("Create one and run this again.");
+        std::process::exit(1);
+    }
+    for path in &written {
+        println!("installed {}", path.display());
+    }
+    println!();
+    println!("now: /vis-oss 804 in your agent, from inside the project's clone");
     Ok(())
 }
 

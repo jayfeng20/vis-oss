@@ -1,7 +1,7 @@
 # The agent contract
 
 This is the spec for filling in a vis-oss study. `vis-oss <issue>` creates the directory
-and copies this file into it as `AGENT.md`; everything after that is your job.
+and copies this file into it as `AGENTS.md`; everything after that is your job.
 
 A study exists so that someone who has never seen a codebase can understand one issue
 in it well enough to contribute. Judge every sentence you write against that.
@@ -11,7 +11,7 @@ in it well enough to contribute. Judge every sentence you write against that.
 ```
 CONTEXT.md     the study — sections below, all of them
 examples/      runnable files: what happens today, what should happen after
-AGENT.md       this file
+AGENTS.md       this file
 ```
 
 `CONTEXT.md` arrives with its headings in place and the issue body already pasted in.

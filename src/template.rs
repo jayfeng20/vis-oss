@@ -58,7 +58,7 @@ pub fn context_md(c: &Context) -> String {
          {meta}{labels}\n\
          \n\
          > Studied against `{commit}` in `{source}`.  \n\
-         > Examples are in **{mode}** mode. See `AGENT.md` for what that means.\n\
+         > Examples are in **{mode}** mode. See `AGENTS.md` for what that means.\n\
          \n\
          ---\n\
          \n\
