@@ -64,6 +64,9 @@ struct Cli {
     /// Remember where studies are filed, for every later run, then exit.
     #[arg(long, value_name = "PATH")]
     set_root: Option<PathBuf>,
+    /// Fast-forward the checkout onto the canonical remote before writing the study.
+    #[arg(long)]
+    sync_upstream: bool,
 }
 
 fn main() -> Result<()> {
@@ -92,7 +95,8 @@ fn main() -> Result<()> {
 
     let plan = scaffold::plan(&opts)?;
     if let Some(stale) = plan.staleness.as_ref().filter(|s| s.behind > 0) {
-        if !confirm_stale(stale, &plan.source)? {
+        let synced = cli.sync_upstream && sync(stale, &plan.source);
+        if !synced && !confirm_stale(stale, &plan.source)? {
             return Ok(());
         }
     }
@@ -105,7 +109,7 @@ fn main() -> Result<()> {
     println!("created {dir}");
     println!("  CONTEXT.md   the study — an agent fills in the empty sections");
     println!("  AGENTS.md    what a good study contains");
-    println!("  00_*, 01_*    runnable probes of today, each ending in what changes");
+    println!("  00_*, 01_*   runnable probes of today, each ending in what changes");
     println!();
     println!("next: /vis-oss in your agent, or tell it to follow {dir}/AGENTS.md");
     Ok(())
@@ -128,6 +132,24 @@ fn install_command() -> Result<()> {
     println!();
     println!("now: /vis-oss 804 in your agent, from inside the project's clone");
     Ok(())
+}
+
+/// Try to fast-forward, reporting either outcome. Returns whether the checkout is current.
+fn sync(stale: &Staleness, source: &Path) -> bool {
+    match git::fast_forward(source, stale) {
+        Ok(()) => {
+            eprintln!(
+                "synced: fast-forwarded {} commit(s) to {}",
+                stale.behind,
+                stale.reference()
+            );
+            true
+        }
+        Err(reason) => {
+            eprintln!("could not sync: {reason}");
+            false
+        }
+    }
 }
 
 /// Warn that the checkout is behind, and let the user go sync instead.

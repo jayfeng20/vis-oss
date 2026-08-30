@@ -88,8 +88,21 @@ a markdown file with empty headings and the issue body, and you fill it in yours
 ### What it reads from where you run it
 
 The repository, root and commit come from git. `upstream` wins over `origin`, since on a
-fork that's where the issue lives. If your clone is behind upstream, vis-oss says so and
-asks before writing, because a study describes code at one commit.
+fork that's where the issue lives.
+
+A study describes code at one commit, so if your clone is behind, vis-oss says so and asks
+before writing. Since you are about to start work anyway, `--sync-upstream` fast-forwards
+the checkout first:
+
+```sh
+vis-oss 804 --sync-upstream
+# synced: fast-forwarded 387 commit(s) to upstream/main
+```
+
+It only ever fast-forwards, and it refuses — telling you why, then falling back to the
+prompt — if you are on another branch, the working tree is dirty, or your branch has
+commits the remote does not. It will not merge, rebase, stash, or touch a branch other
+than the one you have checked out.
 
 | | |
 |---|---|
@@ -98,6 +111,7 @@ asks before writing, because a study describes code at one commit.
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
 | `--tutorial full\|partial\|none` | How much of the examples you write yourself. `none` (default) is complete code, `partial` leaves stubs, `full` is `TODO`s |
+| `--sync-upstream` | Fast-forward the checkout onto the canonical remote before writing |
 | `--install-command` | (Re)install the `/vis-oss` command and exit |
 
 ## License

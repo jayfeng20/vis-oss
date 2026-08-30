@@ -115,6 +115,41 @@ pub fn staleness(root: &Path) -> Option<Staleness> {
     })
 }
 
+/// Fast-forward the checkout onto the canonical remote's default branch.
+///
+/// Deliberately narrow. It refuses rather than resolving anything: no merge commit, no
+/// rebase, no stash, no touching a branch other than the one checked out. A contributor
+/// runs this before starting work, so the only case worth automating is the boring one —
+/// clean tree, sitting on the default branch, strictly behind.
+///
+/// Returns the reason it declined, so the caller can say why.
+pub fn fast_forward(root: &Path, stale: &Staleness) -> Result<(), String> {
+    let branch = current_branch(root).ok_or_else(|| "HEAD is detached".to_string())?;
+    if branch != stale.branch {
+        return Err(format!(
+            "on branch {branch}, not {}. Sync it yourself, or switch first",
+            stale.branch
+        ));
+    }
+    if !is_clean(root) {
+        return Err("the working tree has uncommitted changes".to_string());
+    }
+    let reference = stale.reference();
+    git(root, &["merge", "--ff-only", &reference])
+        .map(|_| ())
+        .ok_or_else(|| format!("git merge --ff-only {reference} failed; local commits?"))
+}
+
+/// The branch currently checked out, or `None` on a detached HEAD.
+fn current_branch(root: &Path) -> Option<String> {
+    git(root, &["rev-parse", "--abbrev-ref", "HEAD"]).filter(|b| b != "HEAD" && !b.is_empty())
+}
+
+/// Whether the working tree and index are free of changes.
+fn is_clean(root: &Path) -> bool {
+    git(root, &["status", "--porcelain"]).is_some_and(|s| s.is_empty())
+}
+
 /// Whether `path` sits inside a git working tree.
 ///
 /// Used only to warn: a study written inside the repository it describes will show up
