@@ -57,7 +57,7 @@ asks before writing, because a study describes code at one commit.
 
 | | |
 |---|---|
-| `vis-oss 804 ~/notes` | File under a different base. `<owner>/<name>/<issue>/` is appended either way |
+| `vis-oss 804 ~/notes` | Create the study in a different directory. e.g. `<owner>/<name>/<issue>` remains as prefix. e.g. `~/notes/<owner>/<name>/<issue>/` |
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
 | `--solution` | Finished code in examples, instead of exercises for you to complete |
