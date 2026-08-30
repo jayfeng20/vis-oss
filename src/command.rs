@@ -38,9 +38,9 @@ search and read the project's source. Write into the study directory by absolute
 ## Do not run the examples
 
 You write them; the reader runs them. Getting one to execute means first paying whatever
-the project charges for a first execution — a `cargo build` across a big workspace, a
-binding compiled from source, a dataset written before anything can be queried — and that
-cost is unpredictable and unrelated to how small your example is. So:
+the project charges for a first execution — a binding compiled from source, a dataset
+written before anything can be queried — and that cost is unpredictable and unrelated to
+how small your example is. So:
 
 - **Do not run an example**, or a cut-down version of one, to check that it works.
 - **Do not write throwaway scripts** hunting for a data size or parameter that makes a
@@ -48,9 +48,15 @@ cost is unpredictable and unrelated to how small your example is. So:
 - **Do not build a trained index, a large generated dataset, or anything else the project
   would call a benchmark.**
 
-Your check is reading. Open the file, find the symbol, confirm the signature — an API you
-read is as real as one you called. Then say where you looked, in each file's provenance
-line: real paths and real line numbers, never just a claim that you were careful.
+There is one mechanical check, and only for Rust: `cargo check` the shared study project
+once your file is in it, and fix what it reports. For Python and anything else interpreted
+there is nothing worth running — a syntax check catches what you would not get wrong, and
+anything stronger means importing the project.
+
+Otherwise the check is reading. Open the file, find the symbol, confirm the signature — an
+API you read is as real as one you called. Say what you checked in each file's provenance
+line: for Rust that it compiles, otherwise the paths you read. Real paths, never just a
+claim that you were careful.
 
 Give each example what it needs to be run by someone else: the exact command and directory,
 the project's own tooling (`uv run`, `poetry run`), and for Rust the shared Cargo project

@@ -86,28 +86,29 @@ Write them in the language the behaviour is *observed* in, which is not always t
 language the fix lands in. For a Rust library with Python bindings, a user meets the slow
 query in Python; the example is Python, and its annotations point down into the Rust.
 
-### You write them; the reader runs them
+### The only check is that it compiles
 
 **You do not run these files.** Getting one to execute means first paying whatever the
-project charges for a first execution — a `cargo build` across a large workspace, a
-binding compiled from source, a dataset written before anything can be queried. That cost
-has nothing to do with how small your example is, and there is no way to predict it from
-outside.
-It is also work the reader repeats anyway, on their machine and against their working
-tree, which is the only run whose result they can trust.
+project charges for a first execution — a binding compiled from source, a dataset written
+before anything can be queried, a service brought up. That cost has nothing to do with how
+small your example is, there is no way to predict it from outside, and it is work the
+reader repeats anyway on their own tree.
 
-So the check available to you is **reading**, and it is the one the ground rules already
-demand: open the file, find the symbol, confirm the signature. An API you read is as real
-as an API you called, and reading costs seconds. Do it exhaustively, and say where you
-looked.
+So there is one mechanical check, and only where the language offers one cheaply:
 
-What this rules out, specifically:
+| language | check | why |
+|---|---|---|
+| **Rust** | `cargo check` the shared study project | The compiler catches the error class that matters here: a signature that moved, a type that changed, a trait no longer in scope. The cost is bounded — no data written, no index trained — and once the shared project has compiled once, later issues are seconds. `todo!()` type-checks, so a `partial` file still passes. |
+| **everything interpreted** | none | There is nothing useful in between. A syntax check catches what you would not get wrong anyway, and anything stronger means importing the project, which is the cost above. |
 
-- Running an example, or a cut-down version of one, to see whether it works.
-- Throwaway scripts to find a data size or a parameter that makes a measurement come out
-  the way you expected.
-- Building anything the project would itself call a benchmark — a trained index, a large
-  generated dataset, a full load of real data.
+Beyond that the check is reading: open the file, find the symbol, confirm the signature.
+Name the paths you read in the provenance line, so the reader can see what was confirmed
+and what was taken on trust.
+
+Do not go further. No running an example to see whether it works, no throwaway scripts
+hunting for a data size or a parameter that makes a measurement come out, and nothing the
+project would itself call a benchmark — a trained index, a large generated dataset, a full
+load of real data.
 
 Size still matters, because someone else pays for it: write the **smallest input that
 reaches the code path**. A query over a thousand rows takes the same branch as one over a
@@ -149,9 +150,9 @@ In order:
 
 1. **A docstring**, stating in this order: what this file demonstrates, in one sentence;
    the exact command to run it and the directory to run it from; and the tutorial level.
-2. **A provenance line** — that it was not run, and what you checked instead: the files
-   you read to confirm every API it calls. This is what separates an example built from
-   the source from one built from memory, and it tells the reader which parts to distrust.
+2. **A provenance line** — what was checked and what was not. For Rust, that it compiles
+   and against which commit; otherwise, the paths you read to confirm the APIs it calls.
+   Keep it short. It exists so the reader knows which parts to distrust.
 3. **The body**, annotated as below.
 4. **An `AFTER` block** — probes only. Setup files do not need one; nothing about
    building the inputs changes.
@@ -166,28 +167,24 @@ says nothing.
 
 Tutorial level: partial — the timing helper is yours to write.
 
-Not run. Every API it calls was read against lance f603c551:
-    lance.write_dataset          python/python/lance/__init__.py:41
-    LanceDataset.create_index    python/python/lance/dataset.py:2274
-    nearest= on to_table         python/python/lance/dataset.py:512
-    LANCE_LOG -> init_logging    python/src/lib.rs:169
-The plan assertions come from reading Scanner::vector_search. The timings are whatever
-your machine does, which is why nothing asserts on them.
+Not run — Python, so nothing to compile. APIs read against lance f603c551:
+write_dataset and create_index in python/python/lance/dataset.py, LANCE_LOG handling
+in python/src/lib.rs:169. The branch it takes comes from reading Scanner::vector_search;
+the timings are whatever your machine does.
 """
 ```
 
-Real paths and real line numbers, not a claim that you were careful: "not run, APIs
-verified" is worth nothing to a reader who cannot see what you opened. Never leave
-provenance out — an example without one is indistinguishable from one written from
-memory.
+Real paths, not a claim that you were careful: "APIs verified" is worth nothing to a
+reader who cannot see what you opened. Never leave provenance out — an example without one
+is indistinguishable from one written from memory.
 
-**Assert what is structural; print what is not.** Every assertion you write runs on a
-machine you have never seen, so it must hold on any of them. Which plan is chosen, which
-operator appears in it, whether a warning reached stderr, what a call returns: assert
-those, and they defend themselves when the project changes underneath. Durations, ratios
-and recall move with the hardware and the row count, so print them and let the reader
-judge. `assert flat_ms > indexed_ms * 10` is not a check, it is a flake posted to a
-stranger.
+**If you assert, assert what is structural.** Assertions are not required — nobody has
+run them, and a file that teaches the code path has done its job. But one that is there
+runs on a machine you have never seen, so it must hold on any of them. Which plan is
+chosen, which operator appears in it, whether a warning reached stderr: those hold.
+Durations, ratios and recall move with the hardware and the row count, so print them and
+let the reader judge. `assert flat_ms > indexed_ms * 10` is not a check, it is a flake
+posted to a stranger.
 
 ### Making them runnable
 
@@ -237,8 +234,10 @@ The contributor gets a real binary compiled against their own working tree — s
 make the change, re-running the probe shows the `AFTER` block coming true. That is a
 working acceptance check that never touches the project's source.
 
-Say in the docstring that the first build is slow, so the reader does not read a long
-compile as a hang. You will not have a number for it; say that rather than guessing one.
+Run `cargo check` on that project once your file is in it, and fix what it reports — this
+is the one check you owe a Rust example, and the first one against a big workspace is the
+only slow part of writing a study. Say in the docstring that the reader's first build is
+slow too, so a long compile is not read as a hang.
 Do not reach for `cargo -Zscript`: it is nightly-only. If what you need to observe is not
 reachable from outside the crate, that is a signal the example belongs in the observation
 language instead, not that you should reach into internals.
@@ -263,9 +262,9 @@ Point at declarations, not only call sites: a reader who opens `knn.rs:150` find
 struct and can read outward. Verify every line you cite, and name the symbol alongside it
 so the reference survives the file moving.
 
-These are teaching material, so hold them to production standards: real error handling, no
-bare `except`, no toy shortcuts, the project's own conventions. Avoid words the project
-does not use — `corpus` is an NLP term a study of an IO bug cannot reuse, and `fixture`
+These are teaching material, not production code: skip the defensive error handling and
+the configurability, and spend the space on the annotations instead. Follow the project's
+own conventions, and avoid words it does not use — `corpus` is an NLP term a study of an IO bug cannot reuse, and `fixture`
 reads as test scaffolding when these are files the reader runs and watches.
 
 ### Tutorial level
