@@ -60,6 +60,11 @@ pub fn context_md(c: &Context) -> String {
          > Studied against `{commit}` in `{source}`.  \n\
          > Examples are in **{mode}** mode. See `AGENTS.md` for what that means.\n\
          \n\
+         > **Written by an agent, and not reviewed.** It is a head start on understanding\n\
+         > this issue, not an answer to it. Check any file reference before you rely on it,\n\
+         > and treat the reasoning as a first draft to argue with — the maintainers own\n\
+         > what the fix should be.\n\
+         \n\
          ---\n\
          \n\
          ## The issue\n\
@@ -100,7 +105,13 @@ pub fn context_md(c: &Context) -> String {
          \n\
          ## How to verify\n\
          \n\
-         <!-- Build, test and lint commands, from the project's own docs. -->\n",
+         <!-- Build, test and lint commands, from the project's own docs. -->\n\
+         \n\
+         ## What I could not verify\n\
+         \n\
+         <!-- Claims above that rest on inference rather than something you read, code you\n\
+              could not find, and questions to put to the maintainers. An empty section is a\n\
+              claim that everything above is solid. -->\n",
         repo = c.repo,
         number = c.number,
         title = c.title,
