@@ -173,8 +173,18 @@ pub fn update() -> Result<()> {
     }
 
     println!("installing the latest {repository}");
+    // `--package` is required, not tidiness: the repository also carries the example
+    // study's Cargo project, so a bare `cargo install --git` finds two packages and
+    // refuses to choose.
     let status = Command::new("cargo")
-        .args(["install", "--git", repository, "--force"])
+        .args([
+            "install",
+            "--git",
+            repository,
+            "--package",
+            env!("CARGO_PKG_NAME"),
+            "--force",
+        ])
         .status()
         .context("running `cargo` (is it on your PATH?)")?;
     if !status.success() {

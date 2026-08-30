@@ -14,7 +14,7 @@ and is not meant to "generate the final solution for the issue".
 ## Install
 
 ```sh
-cargo install --git https://github.com/jayfeng20/vis-oss
+cargo install --git https://github.com/jayfeng20/vis-oss --package vis-oss
 ```
 
 That builds the binary and puts it in `~/.cargo/bin`, which rustup already added to your
@@ -30,7 +30,7 @@ vis-oss --update
 That reinstalls from source and refreshes the `/vis-oss` agent command in the same step,
 because the command is a copy of what the binary knows and a stale one quietly tells your
 agent the wrong thing. (By hand it is
-`cargo install --git ... --force && vis-oss --install-command`; the `--force` matters,
+`cargo install --git ... --package vis-oss --force && vis-oss --install-command`; the `--force` matters,
 since the version does not change between commits and cargo otherwise does nothing.)
 
 You need `git`, and `gh` authenticated (`gh auth login`) to read the issue — without it
