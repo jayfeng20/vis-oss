@@ -87,7 +87,7 @@ pub fn repair(study: &mut Study) -> Repair {
     // Re-pin only once the anchors describe the new commit — otherwise the pin would
     // claim a freshness the unfixable anchors do not have.
     if out.unfixable.is_empty() {
-        if let Some(head) = anchor::head_commit(&root) {
+        if let Some(head) = crate::git::head_commit(&root) {
             if head != study.pin.commit {
                 out.changes.push(Change::Repinned {
                     from: short(&study.pin.commit),

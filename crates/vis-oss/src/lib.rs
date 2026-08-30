@@ -12,6 +12,7 @@
 //! report "moved to line 5305" instead of leaving a reader staring at the wrong code.
 
 pub mod anchor;
+pub mod git;
 pub mod markdown;
 pub mod render;
 pub mod repair;

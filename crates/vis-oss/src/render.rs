@@ -148,7 +148,7 @@ fn header(out: &mut String, study: &Study, ctx: &Ctx) {
     }
     if !study.pin.commit.is_empty() {
         let short: String = study.pin.commit.chars().take(9).collect();
-        let drift = anchor::head_commit(std::path::Path::new(&study.pin.root))
+        let drift = crate::git::head_commit(std::path::Path::new(&study.pin.root))
             .filter(|head| !head.starts_with(&short))
             .map(|head| {
                 let h: String = head.chars().take(9).collect();

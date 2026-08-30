@@ -10,8 +10,7 @@
 //! moved symbol is reported with its new line rather than treated as a failure, which
 //! makes a stale study repairable instead of merely wrong.
 
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::Path;
 
 use crate::study::Anchor;
 
@@ -124,93 +123,11 @@ pub fn check(root: &Path, anchor: &Anchor) -> AnchorState {
     }
 }
 
-/// The commit currently checked out at `root`, if it is a git repository.
-pub fn head_commit(root: &Path) -> Option<String> {
-    let out = Command::new("git")
-        .args(["-C"])
-        .arg(root)
-        .args(["rev-parse", "HEAD"])
-        .output()
-        .ok()?;
-    out.status
-        .success()
-        .then(|| String::from_utf8_lossy(&out.stdout).trim().to_string())
-        .filter(|s| !s.is_empty())
-}
-
-/// The root of the git repository containing `from`.
-pub fn repo_root(from: &Path) -> Option<PathBuf> {
-    let out = Command::new("git")
-        .args(["-C"])
-        .arg(from)
-        .args(["rev-parse", "--show-toplevel"])
-        .output()
-        .ok()?;
-    out.status
-        .success()
-        .then(|| PathBuf::from(String::from_utf8_lossy(&out.stdout).trim()))
-}
-
-/// The `owner/name` slug for the repository at `root`.
-///
-/// Prefers the `upstream` remote over `origin`: on a fork, `origin` is your copy and
-/// the issues live upstream. Falls back to `origin` when there is no `upstream`.
-pub fn repo_slug(root: &Path) -> Option<String> {
-    ["upstream", "origin"]
-        .iter()
-        .find_map(|remote| remote_slug(root, remote))
-}
-
-fn remote_slug(root: &Path, remote: &str) -> Option<String> {
-    let out = Command::new("git")
-        .args(["-C"])
-        .arg(root)
-        .args(["remote", "get-url", remote])
-        .output()
-        .ok()?;
-    if !out.status.success() {
-        return None;
-    }
-    parse_slug(String::from_utf8_lossy(&out.stdout).trim())
-}
-
-/// Extract `owner/name` from an HTTPS or SSH git remote URL.
-fn parse_slug(url: &str) -> Option<String> {
-    let rest = url
-        .strip_prefix("git@")
-        .and_then(|s| s.split_once(':').map(|(_, p)| p))
-        .or_else(|| {
-            url.split_once("://")
-                .map(|(_, r)| r)
-                .and_then(|r| r.split_once('/').map(|(_, p)| p))
-        })?;
-    let rest = rest.strip_suffix(".git").unwrap_or(rest);
-    let mut parts = rest.split('/').filter(|p| !p.is_empty());
-    let owner = parts.next()?;
-    let name = parts.next()?;
-    Some(format!("{owner}/{name}"))
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::path::PathBuf;
 
-    #[test]
-    fn parses_https_and_ssh_remotes() {
-        assert_eq!(
-            parse_slug("https://github.com/lance-format/lance.git").as_deref(),
-            Some("lance-format/lance")
-        );
-        assert_eq!(
-            parse_slug("https://github.com/lance-format/lance").as_deref(),
-            Some("lance-format/lance")
-        );
-        assert_eq!(
-            parse_slug("git@github.com:jayfeng20/lance.git").as_deref(),
-            Some("jayfeng20/lance")
-        );
-        assert_eq!(parse_slug("not-a-url"), None);
-    }
+    use super::*;
 
     fn write(dir: &Path, name: &str, body: &str) -> PathBuf {
         let p = dir.join(name);
