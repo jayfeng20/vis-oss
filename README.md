@@ -8,8 +8,8 @@ like it, what did the maintainers leave undecided. vis-oss creates a directory f
 issue, an agent fills it in, and you get a written answer you can keep.
 
 **IMPORTANT**: An AI agent can and absolutely will make mistakes especially on complex issues. The study it 
-generates is mainly for helping contributors familiarize themselves with any issue faster, and is not meant
-to "generate the right solution for the issue".
+generates is mainly for helping contributors familiarize themselves with issues faster, and is not meant
+to "generate the right solution for the issue". The code it provides serves as a starting point, not whole truth.
 
 ## Install
 
