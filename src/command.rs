@@ -97,8 +97,8 @@ set of guesses.
 
 Tell the user where it is and what vis-oss said about the commit — if the checkout has
 moved since, the file references in it may have moved too, and re-reading those is the
-useful thing to offer. `vis-oss <issue> --redo` archives the existing study under its
-pinned commit and starts a new one, but that is the user's call to make, not yours.
+useful thing to offer. `vis-oss <issue> --redo` deletes the existing study and starts a
+new one — it is not kept anywhere — so that is the user's call to make, not yours.
 
 ## If the checkout is behind
 

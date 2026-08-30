@@ -80,7 +80,7 @@ struct Cli {
     /// Steer the agent: prior art to look at, an angle to take. Repeatable.
     #[arg(long, value_name = "TEXT")]
     note: Vec<String>,
-    /// Archive an existing study and write a fresh skeleton.
+    /// Delete an existing study and write a fresh skeleton. The old one is not kept.
     #[arg(long)]
     redo: bool,
 }
@@ -211,7 +211,7 @@ fn report_existing(dir: &Path, pinned: &Option<String>, head: &Option<String>) -
         _ => {}
     }
     println!();
-    println!("nothing was overwritten. --redo archives it and starts again.");
+    println!("nothing was overwritten. --redo deletes it and starts again.");
     Ok(())
 }
 

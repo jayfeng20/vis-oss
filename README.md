@@ -158,7 +158,7 @@ than the one you have checked out.
 | `--source <path>` | Study a checkout other than the enclosing one |
 | `--tutorial full\|partial\|none` | How much of the examples you write yourself. `partial` (default) leaves the parts worth thinking about as stubs, `none` is complete code, `full` is `TODO`s |
 | `--note <text>` | A lead for the agent to verify. Repeatable |
-| `--redo` | Archive an existing study and start fresh |
+| `--redo` | Delete an existing study and start fresh. The old one is not kept |
 | `--sync-upstream` | Fast-forward the checkout onto the canonical remote. With an issue number it runs first; on its own, `vis-oss --sync-upstream` just syncs |
 | `--update` | Reinstall the latest vis-oss, refresh the agent command, and exit |
 | `--install-command` | (Re)install the `/vis-oss` command and exit |
