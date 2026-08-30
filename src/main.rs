@@ -40,7 +40,7 @@ use template::Tutorial;
 )]
 struct Cli {
     /// Issue number.
-    #[arg(required_unless_present_any = ["install_command", "set_root"])]
+    #[arg(required_unless_present_any = ["install_command", "set_root", "update"])]
     number: Option<u64>,
     /// Root to file this study under, overriding the saved root for this run.
     ///
@@ -61,6 +61,9 @@ struct Cli {
     /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
     #[arg(long)]
     install_command: bool,
+    /// Reinstall the latest vis-oss and refresh the agent command, then exit.
+    #[arg(long)]
+    update: bool,
     /// Remember where studies are filed, for every later run, then exit.
     #[arg(long, value_name = "PATH")]
     set_root: Option<PathBuf>,
@@ -85,6 +88,9 @@ fn main() -> Result<()> {
         );
         println!("remembered in {}", file.display());
         return Ok(());
+    }
+    if cli.update {
+        return command::update();
     }
     if cli.install_command {
         return install_command();

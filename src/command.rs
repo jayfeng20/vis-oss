@@ -5,6 +5,7 @@
 //! one file — vis-oss still never invokes an agent.
 
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use anyhow::{Context, Result};
 
@@ -119,4 +120,61 @@ pub fn outdated() -> Vec<PathBuf> {
 /// Directories checked, for reporting when none were found.
 pub fn candidates(home: &Path) -> Vec<PathBuf> {
     TARGETS.iter().map(|(_, d, _)| home.join(d)).collect()
+}
+
+/// Reinstall from source, then refresh the agent command with the *new* binary.
+///
+/// The two copies — the binary and the prompt file it writes — go stale independently,
+/// and a stale prompt quietly instructs the agent wrongly. Doing both in one step is the
+/// only way they cannot drift apart.
+///
+/// Replacing a running executable is fine on Unix, where the old inode survives until the
+/// process exits. On Windows the file is locked and cargo will refuse.
+pub fn update() -> Result<()> {
+    let repository = env!("CARGO_PKG_REPOSITORY");
+    if repository.is_empty() {
+        anyhow::bail!("this build records no repository to update from");
+    }
+
+    println!("installing the latest {repository}");
+    let status = Command::new("cargo")
+        .args(["install", "--git", repository, "--force"])
+        .status()
+        .context("running `cargo` (is it on your PATH?)")?;
+    if !status.success() {
+        anyhow::bail!("cargo install failed; nothing was changed");
+    }
+
+    // Deliberately the freshly written binary, not this process: running our own
+    // `install()` here would write the command text this build was compiled with, which
+    // is exactly the version being replaced.
+    let installed = installed_path()?;
+    let status = Command::new(&installed)
+        .arg("--install-command")
+        .status()
+        .with_context(|| format!("running {}", installed.display()))?;
+    if !status.success() {
+        anyhow::bail!("{} --install-command failed", installed.display());
+    }
+    Ok(())
+}
+
+/// Where `cargo install` puts binaries.
+fn installed_path() -> Result<PathBuf> {
+    let home = std::env::var_os("CARGO_HOME")
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("HOME")
+                .or_else(|| std::env::var_os("USERPROFILE"))
+                .map(|h| PathBuf::from(h).join(".cargo"))
+        })
+        .context("could not locate CARGO_HOME")?;
+    let path = home.join("bin").join(env!("CARGO_PKG_NAME"));
+    if path.exists() {
+        return Ok(path);
+    }
+    anyhow::bail!(
+        "{} is not there — was this copy installed with cargo?",
+        path.display()
+    )
 }
