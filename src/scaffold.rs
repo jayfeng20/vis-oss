@@ -78,8 +78,28 @@ pub fn plan(opts: &InitOptions) -> Result<Plan> {
     })
 }
 
+/// What `init` did.
+pub enum Created {
+    /// A new study was written.
+    Study { dir: PathBuf, notes: Vec<String> },
+    /// One was already there, and was left alone.
+    Existing {
+        dir: PathBuf,
+        pinned: Option<String>,
+        head: Option<String>,
+    },
+}
+
+/// The commit an existing study records, read back out of its header.
+fn pinned_commit(context: &str) -> Option<String> {
+    let line = context.lines().find(|l| l.contains("Studied against"))?;
+    let mut parts = line.split('`');
+    parts.next()?;
+    parts.next().map(str::to_string).filter(|s| !s.is_empty())
+}
+
 /// Write the study skeleton. Returns the directory created.
-pub fn init(opts: &InitOptions, plan: Plan) -> Result<(PathBuf, Vec<String>)> {
+pub fn init(opts: &InitOptions, plan: Plan) -> Result<Created> {
     let Plan {
         source,
         repo,
@@ -101,11 +121,15 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<(PathBuf, Vec<String>)> {
         }
     };
 
-    if dir.join("CONTEXT.md").exists() {
-        bail!(
-            "{} already contains a CONTEXT.md — delete it or pass a different base",
-            dir.display()
-        );
+    // Re-running for an issue already studied is a normal thing to do — usually to find
+    // the study again, or to check whether it has gone stale. It is not an error, and
+    // the existing work is never overwritten.
+    if let Ok(existing) = std::fs::read_to_string(dir.join("CONTEXT.md")) {
+        return Ok(Created::Existing {
+            pinned: pinned_commit(&existing),
+            head: git::head_commit(&source),
+            dir,
+        });
     }
     std::fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
 
@@ -125,7 +149,7 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<(PathBuf, Vec<String>)> {
     std::fs::write(dir.join("CONTEXT.md"), context)?;
     std::fs::write(dir.join("AGENTS.md"), AGENT_CONTRACT)?;
 
-    Ok((dir, notes))
+    Ok(Created::Study { dir, notes })
 }
 
 /// `<root>/<name>/<owner>/<issue>/` — the layout studies are filed under.

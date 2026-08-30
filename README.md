@@ -85,6 +85,15 @@ vis-oss 804
 Same directory, same contract, but it stops after creating them — `CONTEXT.md` arrives as
 a markdown file with empty headings and the issue body, and you fill it in yourself.
 
+Running it again for an issue you have already studied never overwrites anything. It
+prints where the study is, and whether the checkout has moved since it was written:
+
+```
+already studied: ~/Coding/OSS-study/lance/lance-format/804
+  written against 4a54e5dde, checkout is now at 324cedd9d
+  its file references may have moved; re-read before relying on them
+```
+
 ### What it reads from where you run it
 
 The repository, root and commit come from git. `upstream` wins over `origin`, since on a
