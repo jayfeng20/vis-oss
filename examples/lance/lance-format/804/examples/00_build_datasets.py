@@ -1,5 +1,5 @@
 """
-Build the corpora that examples 01 and 02 query.
+Build the datasets that 01_flat_search.py queries.
 
 Issue #804 turns on ONE distinction: a brute-force vector search that is cheap versus
 one that is expensive. So you need both, and the small one matters as much as the large
@@ -13,7 +13,7 @@ worried about when they warned against warning blindly.
 
 Why bother with --real: dimensionality drives the cost. Flat KNN is O(rows x dim), so
 1536-dim OpenAI vectors are ~12x more expensive per row than 128-dim SIFT, and random
-uniform vectors have unrealistically uniform distances. The real corpus is what makes
+uniform vectors have unrealistically uniform distances. The real dataset is what makes
 the timing gap in example 01 obvious rather than arguable.
 
     cd ~/Coding/lance/python
@@ -24,11 +24,11 @@ the timing gap in example 01 obvious rather than arguable.
 # TODO 1. imports: argparse, pathlib, time, numpy as np, pyarrow as pa, lance
 
 # TODO 2. Decide where datasets live. Put them OUTSIDE the lance checkout —
-#    `*.lance` is gitignored there, but a 6GB corpus inside a repo you are about to
+#    `*.lance` is gitignored there, but a 6GB dataset inside a repo you are about to
 #    rebase is still a bad time. Suggest: ~/lance-study-data/
 
 # TODO 3. Synthetic path (default; no download, works offline).
-#    - DIM = 1536 to match the real corpus, so timings are comparable
+#    - DIM = 1536 to match the real dataset, so timings are comparable
 #    - rows = 5_000 for small, 500_000 for large
 #    - build the vector column as:
 #        pa.FixedSizeListArray.from_arrays(
@@ -52,7 +52,7 @@ the timing gap in example 01 obvious rather than arguable.
 #         to take a subset — faster, and 500k is already far past any sane threshold.
 #    Requires `datasets` (see benchmarks/dbpedia-openai/requirements.txt).
 
-# TODO 5. Write TWO copies of the large corpus. This is the part people skip and then
+# TODO 5. Write TWO copies of the large dataset. This is the part people skip and then
 #    cannot explain their own results:
 #      - large_noindex.lance   left with no vector index
 #      - large_indexed.lance   same rows, then create_index(...)
@@ -65,5 +65,5 @@ the timing gap in example 01 obvious rather than arguable.
 #    Expect index construction to take minutes on 500k rows. That is k-means running.
 
 # TODO 6. Print what you built — path, row count, dim, on-disk size, and whether an
-#    index exists (ds.list_indices()). Example 01 should be able to assume the corpora
+#    index exists (ds.list_indices()). Example 01 should be able to assume the datasets
 #    are there and correct.
