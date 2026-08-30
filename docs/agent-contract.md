@@ -13,9 +13,14 @@ you read, and mark plainly what you inferred.
 
 ```
 CONTEXT.md     the study — sections below, all of them
-examples/      runnable files: what happens today, what should happen after
-AGENTS.md       this file
+AGENTS.md      this file
+00_*, 01_*     the examples, alongside the prose
 ```
+
+Examples sit at the top level of the study. They are few and numbered, so a directory for
+them would be one level to open for nothing. A language that needs a project to run at
+all — Rust — puts that project one level *up*, shared by every issue in the same
+repository; see *Making them runnable*.
 
 `CONTEXT.md` arrives with its headings in place and the issue body already pasted in.
 Fill in every section. If a section genuinely does not apply, say so in one line and
@@ -143,15 +148,22 @@ a `print` rots silently.
 directory, and use the project's own environment tooling — `uv run`, `poetry run`,
 whatever its docs prescribe.
 
-**Rust:** put one Cargo project in `examples/`, depending on the pinned checkout by path,
-with a `[[bin]]` per example. The contributor runs
-`cargo run --bin 01_flat_search` and gets a real binary against their own working tree —
-so once they make the change, re-running the probe shows the `AFTER` block coming true.
-That is a working acceptance check that never touches the project's source.
+**Rust:** one Cargo project per *project studied*, not per issue, at the repository level
+of the study root — one directory above the issue:
+
+```
+~/vis-oss/lance/lance-format/          <- the Cargo project lives here
+  Cargo.toml
+  target/                              <- built once, reused by every issue
+  804/
+    CONTEXT.md   AGENTS.md   01_flat_search.rs
+  8245/
+    CONTEXT.md   AGENTS.md   01_stringview.rs
+```
 
 ```toml
 [package]
-name = "study-examples"
+name = "lance-studies"
 version = "0.0.0"
 edition = "2021"
 publish = false
@@ -161,15 +173,27 @@ lance = { path = "/Users/you/Coding/lance/rust/lance" }   # the pinned checkout
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 
 [[bin]]
-name = "01_flat_search"
-path = "src/bin/01_flat_search.rs"
+name = "804_flat_search"
+path = "804/01_flat_search.rs"
 ```
 
-Say in the docstring that the first build is slow — a dependency on a workspace this size
-pulls hundreds of crates — and give the real number if you ran it. Do not reach for
-`cargo -Zscript`: it is nightly-only. If what you need to observe is not reachable from
-outside the crate, that is a signal the example belongs in the observation language
-instead, not that you should reach into internals.
+Per-issue would mean a separate `target/`, so the project's whole dependency graph gets
+rebuilt for every issue you study — for a workspace the size of Lance that is hundreds of
+crates and minutes each time. Sharing one project builds them once.
+
+So: if `Cargo.toml` already exists one level up, **add a `[[bin]]` to it** rather than
+creating another. Name the binary `<issue>_<file>` so two issues cannot collide, and give
+the run command in the docstring as
+`cargo run --bin 804_flat_search` from the directory holding `Cargo.toml`.
+
+The contributor gets a real binary compiled against their own working tree — so once they
+make the change, re-running the probe shows the `AFTER` block coming true. That is a
+working acceptance check that never touches the project's source.
+
+Say in the docstring that the first build is slow, and give the real number if you ran it.
+Do not reach for `cargo -Zscript`: it is nightly-only. If what you need to observe is not
+reachable from outside the crate, that is a signal the example belongs in the observation
+language instead, not that you should reach into internals.
 
 ### Annotate the path into the code
 
