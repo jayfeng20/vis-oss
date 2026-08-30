@@ -109,6 +109,12 @@ what the maintainers use makes your numbers comparable to theirs.
 Every example needs a `run` command that works from a stated directory, and must actually
 run once the reader has filled in whatever the tutorial level left out.
 
+Name them in the project's own vocabulary, numbered in the order they are run:
+`00_build_datasets.py` before `01_flat_search.py`, because Lance calls them datasets and
+`scanner.rs` calls it flat search. Avoid words the project does not use — `corpus` is an
+NLP term that a study of an IO bug cannot reuse, and `fixture` reads as test scaffolding
+when these are things the reader runs and watches.
+
 ### Tutorial level
 
 `CONTEXT.md` records the level the study was generated at.

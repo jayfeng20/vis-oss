@@ -16,8 +16,8 @@ absence of a warning is something you have observed rather than assumed.
 Tutorial level: full. Every step below is yours to write.
 """
 
-# TODO 1. Load the three datasets built by 00_corpus.py: small, large_noindex,
-#    large_indexed. Fail with "run 00_corpus.py first" rather than letting pyarrow
+# TODO 1. Load the three datasets built by 00_build_datasets.py: small, large_noindex,
+#    large_indexed. Fail with "run 00_build_datasets.py first" rather than letting pyarrow
 #    raise from somewhere deep.
 
 # TODO 2. Take the query vector FROM the data, not from np.random:

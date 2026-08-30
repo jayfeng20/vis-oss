@@ -141,14 +141,14 @@ the issue that the FTS warning may be less visible from Python than intended.
 
 Run from `~/Coding/lance/python` in both cases.
 
-**`examples/00_corpus.py`** — builds the corpora the probe needs: one small enough that
+**`examples/00_build_datasets.py`** — builds the datasets the probe needs: one small enough that
 brute force is the right call and must stay silent, one large enough that it is not.
 Offers real 1536-dim OpenAI embeddings via lance's own
 `benchmarks/dbpedia-openai/datagen.py`, with a synthetic fallback.
 
 ```sh
-uv run python <study>/examples/00_corpus.py --scale small
-uv run python <study>/examples/00_corpus.py --scale large --real
+uv run python <study>/examples/00_build_datasets.py --scale small
+uv run python <study>/examples/00_build_datasets.py --scale large --real
 ```
 
 **`examples/01_flat_search.py`** — the probe. Times the same query against indexed and
@@ -184,7 +184,7 @@ the single claim most worth checking before citing it on the issue.
 
 **No timings were measured.** The premise that brute force is dramatically slower at scale
 is standard and near-certain, but the ratio that belongs in a PR description is not in this
-study, because no large corpus was ever built. `examples/01_flat_search.py` is written to
+study, because no large dataset was ever built. `examples/01_flat_search.py` is written to
 produce it; nobody has run it.
 
 **Neither example file has been executed.** They are written against APIs I
@@ -226,7 +226,7 @@ Precisely:
   `rust/lance-index/src/scalar/inverted/index/flat_search.rs:448`.
 - **once for a batch query too.** `nearest` with a 2-D `q` goes through the
   `is_batch_nearest` path; eight query vectors must not produce eight warnings.
-- **silent below the threshold.** The small corpus produces nothing. This is the whole
+- **silent below the threshold.** The small dataset produces nothing. This is the whole
   difficulty of the issue, and the only part reviewers will scrutinise.
 - **silent when an index served the query**, and — see open question 2 — silent when the
   caller passed `use_index=False`.
