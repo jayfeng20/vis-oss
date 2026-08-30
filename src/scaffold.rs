@@ -11,7 +11,7 @@ use anyhow::{bail, Context as _, Result};
 use serde_json::Value;
 
 use crate::git::{self, Staleness};
-use crate::template::{self, AGENT_CONTRACT};
+use crate::template::{self, Tutorial, AGENT_CONTRACT};
 
 /// Default base directory for studies, under the user's home.
 ///
@@ -29,8 +29,8 @@ pub struct InitOptions {
     /// The study lands at `<base>/<owner>/<name>/<number>/` either way, so pointing
     /// several issues at one base keeps them organised rather than colliding.
     pub base: Option<PathBuf>,
-    /// Write finished code in examples rather than exercises.
-    pub solution: bool,
+    /// How much of the examples the reader writes themselves.
+    pub tutorial: Tutorial,
     /// Checkout to study. Defaults to the enclosing repository.
     pub source: Option<PathBuf>,
 }
@@ -136,7 +136,7 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<(PathBuf, Vec<String>)> {
         body: &issue.body,
         source: &source.to_string_lossy(),
         commit: &commit,
-        tutorial: !opts.solution,
+        tutorial: opts.tutorial,
     });
     std::fs::write(dir.join("CONTEXT.md"), context)?;
     std::fs::write(dir.join("AGENTS.md"), AGENT_CONTRACT)?;

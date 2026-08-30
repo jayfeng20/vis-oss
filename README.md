@@ -52,6 +52,10 @@ Your agent creates the study and fills it in. You get:
 [Here is a finished one](examples/lance-format/lance/804/CONTEXT.md), for
 [an open issue in lance](https://github.com/lance-format/lance/issues/804).
 
+The examples are the point: runnable probes of what the code does today, with comments
+naming the function or struct each call reaches and where it is declared, and an `AFTER`
+block saying what would differ once the issue is fixed. They never patch the project.
+
 Without an agent, `vis-oss 804` creates the same directory and you fill in `CONTEXT.md`
 yourself — it is a markdown file with headings.
 
@@ -64,7 +68,7 @@ asks before writing, because a study describes code at one commit.
 | `vis-oss 804 ~/notes` | Create the study in a different directory. e.g. `<owner>/<name>/<issue>` remains as prefix. e.g. `~/notes/<owner>/<name>/<issue>/` |
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
-| `--solution` | Finished code in examples, instead of exercises for you to complete |
+| `--tutorial full\|partial\|none` | How much of the examples you write yourself. `full` (default) is `TODO`s, `partial` leaves stubs, `none` is complete code |
 | `--install-command` | (Re)install the `/vis-oss` command and exit |
 
 ## License

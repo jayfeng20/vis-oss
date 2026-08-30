@@ -23,6 +23,7 @@ mod template;
 
 use git::Staleness;
 use scaffold::InitOptions;
+use template::Tutorial;
 
 /// Create a study directory for an open-source issue, for an agent to fill in.
 ///
@@ -50,9 +51,9 @@ struct Cli {
     /// Checkout to study. Defaults to the enclosing repository.
     #[arg(long)]
     source: Option<PathBuf>,
-    /// Write finished code in examples instead of exercises for the reader.
-    #[arg(long)]
-    solution: bool,
+    /// How much of the examples the reader writes themselves.
+    #[arg(long, value_enum, default_value = "full")]
+    tutorial: Tutorial,
     /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
     #[arg(long)]
     install_command: bool,
@@ -69,7 +70,7 @@ fn main() -> Result<()> {
             .expect("clap requires a number unless --install-command"),
         repo: cli.repo,
         base: cli.base,
-        solution: cli.solution,
+        tutorial: cli.tutorial,
         source: cli.source,
     };
 
