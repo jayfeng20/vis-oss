@@ -53,9 +53,6 @@ struct Cli {
     /// Write finished code in examples instead of exercises for the reader.
     #[arg(long)]
     solution: bool,
-    /// Proceed without asking, even if the checkout is behind upstream.
-    #[arg(long, short = 'y')]
-    yes: bool,
     /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
     #[arg(long)]
     install_command: bool,
@@ -78,7 +75,7 @@ fn main() -> Result<()> {
 
     let plan = scaffold::plan(&opts)?;
     if let Some(stale) = plan.staleness.as_ref().filter(|s| s.behind > 0) {
-        if !confirm_stale(stale, &plan.source, cli.yes)? {
+        if !confirm_stale(stale, &plan.source)? {
             return Ok(());
         }
     }
@@ -121,7 +118,7 @@ fn install_command() -> Result<()> {
 /// A study written against a stale checkout documents code upstream has already
 /// changed, and every file reference in it is wrong in a way that is invisible later.
 /// Syncing stays the user's decision. Returns whether to proceed.
-fn confirm_stale(stale: &Staleness, source: &Path, yes: bool) -> Result<bool> {
+fn confirm_stale(stale: &Staleness, source: &Path) -> Result<bool> {
     let reference = stale.reference();
     eprintln!(
         "warning: this checkout is {} commit(s) behind {reference}.",
@@ -137,12 +134,8 @@ fn confirm_stale(stale: &Staleness, source: &Path, yes: bool) -> Result<bool> {
     );
     eprintln!();
 
-    if yes {
-        eprintln!("proceeding anyway (--yes)");
-        return Ok(true);
-    }
     if !std::io::stdin().is_terminal() {
-        eprintln!("proceeding anyway (not a terminal; pass --yes to silence this)");
+        eprintln!("proceeding anyway (not a terminal)");
         return Ok(true);
     }
     eprint!("Continue with the stale checkout? [y/N] ");
