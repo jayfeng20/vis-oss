@@ -120,113 +120,21 @@ pub fn staleness(root: &Path) -> Option<Staleness> {
     })
 }
 
-/// Where `info/exclude` lives for this checkout.
+/// Whether `path` sits inside a git working tree.
 ///
-/// Not always `<root>/.git/info/`: in a linked worktree `.git` is a *file* pointing at
-/// the real gitdir, and `info/exclude` belongs to the common dir shared by every
-/// worktree. Guessing the path here would silently write an exclude file that git
-/// never reads.
-fn exclude_file(root: &Path) -> Option<PathBuf> {
-    let common = git(
-        root,
-        &["rev-parse", "--path-format=absolute", "--git-common-dir"],
-    )
-    .or_else(|| git(root, &["rev-parse", "--git-common-dir"]))?;
-    let common = PathBuf::from(&common);
-    let common = if common.is_absolute() {
-        common
+/// Used only to warn: a study written inside the repository it describes will show up
+/// in `git status` and can be committed by accident.
+pub fn is_inside_repo(path: &Path) -> bool {
+    let probe = if path.exists() {
+        path.to_path_buf()
     } else {
-        root.join(common)
-    };
-    Some(common.join("info").join("exclude"))
-}
-
-/// Whether git currently ignores `target`.
-pub fn is_ignored(root: &Path, target: &Path) -> bool {
-    Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .args(["check-ignore", "--quiet"])
-        .arg(target)
-        .status()
-        .is_ok_and(|s| s.success())
-}
-
-/// The result of trying to keep a study out of the user's commits.
-#[derive(Debug, Clone)]
-pub enum Excluded {
-    /// The pattern was added and git now confirms the path is ignored.
-    Added(String),
-    /// Git already ignored it; nothing was written.
-    Already,
-    /// The path is *not* ignored and vis-oss could not make it so.
-    Failed(String),
-}
-
-/// Make `target` ignored locally, and verify that it worked.
-///
-/// Writes to `info/exclude` rather than `.gitignore` on purpose: `.gitignore` is
-/// tracked, so ignoring a scratch directory there would itself become a commit in the
-/// contributor's PR. `info/exclude` is per-clone and never leaves the machine.
-///
-/// The write is verified with `git check-ignore` rather than assumed, because an
-/// exclude pattern that does not match is indistinguishable from one that does until
-/// something is accidentally committed.
-pub fn ensure_ignored(root: &Path, target: &Path) -> Excluded {
-    use std::io::Write as _;
-
-    if is_ignored(root, target) {
-        return Excluded::Already;
-    }
-
-    // Anchor to the repository root and restrict to directories, so the pattern cannot
-    // match an unrelated file of the same name deeper in the tree.
-    let rel = target.strip_prefix(root).unwrap_or(target);
-    let first = rel
-        .components()
-        .next()
-        .map(|c| c.as_os_str().to_string_lossy().into_owned());
-    let Some(first) = first else {
-        return Excluded::Failed("study directory is the repository root".to_string());
-    };
-    let pattern = format!("/{first}/");
-
-    let Some(path) = exclude_file(root) else {
-        return Excluded::Failed("could not locate info/exclude".to_string());
-    };
-    if let Some(parent) = path.parent() {
-        if std::fs::create_dir_all(parent).is_err() {
-            return Excluded::Failed(format!("could not create {}", parent.display()));
+        // The study directory does not exist yet; ask about the nearest parent that does.
+        match path.ancestors().find(|p| p.exists()) {
+            Some(p) => p.to_path_buf(),
+            None => return false,
         }
-    }
-    let existing = std::fs::read_to_string(&path).unwrap_or_default();
-    if !existing.lines().any(|l| l.trim() == pattern) {
-        let write = (|| -> std::io::Result<()> {
-            let mut f = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(&path)?;
-            if !existing.is_empty() && !existing.ends_with('\n') {
-                writeln!(f)?;
-            }
-            writeln!(
-                f,
-                "\n# vis-oss study directories (local only, never committed)\n{pattern}"
-            )
-        })();
-        if let Err(e) = write {
-            return Excluded::Failed(format!("writing {}: {e}", path.display()));
-        }
-    }
-
-    if is_ignored(root, target) {
-        Excluded::Added(pattern)
-    } else {
-        Excluded::Failed(format!(
-            "{pattern} did not take effect; check {}",
-            path.display()
-        ))
-    }
+    };
+    git(&probe, &["rev-parse", "--is-inside-work-tree"]).as_deref() == Some("true")
 }
 
 #[cfg(test)]
