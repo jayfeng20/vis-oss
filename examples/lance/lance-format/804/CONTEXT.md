@@ -170,9 +170,11 @@ LANCE_LOG=warn uv run --frozen python <study>/01_flat_search.py
 An earlier run of this study, at these sizes, reported `flat / indexed: 0.6x` — the index
 loses. If you see the same, that is the issue's own caveat showing up in a measurement.
 
-**`01_flat_search.rs`** — the same probe from Rust. It is a `[[bin]]` in the shared study
-project one level up (`../Cargo.toml`), whose `lance` path dependency you point at your
-own checkout. The first build compiles lance's whole dependency graph, so expect minutes.
+**`01_flat_search.rs`** — the same probe from Rust. It is a `[[bin]]` in a Cargo project
+one level up, shared by every issue studied in this repository. That manifest is not
+checked in — its `lance` path dependency has to point at your own checkout — so write it
+from the template in `AGENTS.md` first. The first build compiles lance's whole dependency
+graph, so expect minutes.
 
 ```sh
 cd <study root>/lance/lance-format

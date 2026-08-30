@@ -173,10 +173,9 @@ pub fn update() -> Result<()> {
     }
 
     println!("installing the latest {repository}");
-    // Naming the crate is required, not tidiness: the repository also carries the example
-    // study's Cargo project, so a bare `cargo install --git` finds two packages and
-    // refuses to choose. For a git install the name is positional — `--package` is not
-    // accepted there.
+    // Name the crate rather than relying on this being the only package in the tree: a
+    // bare `cargo install --git` refuses to choose as soon as it is not. For a git install
+    // the name is positional; `--package` is not accepted there.
     let status = Command::new("cargo")
         .args([
             "install",
