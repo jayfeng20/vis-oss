@@ -32,10 +32,5 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
-      - name: The JSON Schema must be emittable
-        run: cargo run -q -p vis-oss -- schema > /dev/null
-
-      # The shipped example anchors point into a different repository, so only its
-      # structure can be checked here — `render` exercises parsing end to end.
-      - name: The shipped example must parse and render
-        run: cargo run -q -p vis-oss -- render examples/study-804 --no-check > /dev/null
+      - name: The CLI must start
+        run: cargo run -q -p vis-oss -- --help > /dev/null

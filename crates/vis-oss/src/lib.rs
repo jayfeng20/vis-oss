@@ -1,21 +1,15 @@
-//! vis-oss — visualize open-source software, so an unfamiliar issue is legible before
-//! you change anything.
+//! vis-oss — understand an open-source issue before you try to fix it.
 //!
-//! The split is the same one caliper draws for PR review: an agent investigates and
-//! emits a structured [`Study`](study::Study); vis-oss owns the skeleton, the
-//! validation and the presentation. The binary never invokes an agent, which keeps it
-//! deterministic and testable.
+//! The program is deliberately small. It reads an issue and a checkout, creates a
+//! directory, and writes a `CONTEXT.md` with its headings in place and the agent
+//! contract beside it. Everything that makes a study *good* lives in that contract,
+//! which is prose, because the study is prose.
 //!
-//! What vis-oss adds beyond a directory template is **drift detection**. A study is a
-//! set of claims about where things live in a codebase, and those claims rot on every
-//! rebase. Each anchor carries a symbol as well as a line, so [`anchor::check`] can
-//! report "moved to line 5305" instead of leaving a reader staring at the wrong code.
+//! What vis-oss will not do is invoke an agent or parse a study back in. Both were
+//! tried and removed: orchestration makes the binary non-deterministic, and a schema in
+//! the middle meant an agent writing markdown into JSON strings so a renderer could
+//! turn it back into markdown.
 
-pub mod anchor;
 pub mod git;
-pub mod markdown;
-pub mod render;
-pub mod repair;
 pub mod scaffold;
-pub mod study;
-pub mod validate;
+pub mod template;
