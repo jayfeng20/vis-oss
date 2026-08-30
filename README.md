@@ -13,7 +13,12 @@ issue, an agent fills it in, and you get a written answer you can keep.
 cargo install --git https://github.com/jayfeng20/vis-oss vis-oss
 ```
 
-Needs `git`, and `gh` (authenticated).
+You need `git`, and `gh` authenticated (`gh auth login`) to read the issue — without it
+you still get a directory, just with a stub header instead of the issue text.
+
+No agent setup, API key or configuration. vis-oss never invokes an agent; it writes
+markdown files. Any coding agent that can read and write files can fill them in, and so
+can you.
 
 ## Use
 
