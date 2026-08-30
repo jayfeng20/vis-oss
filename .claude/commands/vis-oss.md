@@ -2,59 +2,43 @@
 description: Investigate an open-source issue and fill in a vis-oss study
 ---
 
-Investigate an issue and produce a **vis-oss study** — a durable, drift-checkable
-explanation of what the issue is, where the relevant code lives, and what a reader must
-decide before implementing.
+Fill in a vis-oss study — a `CONTEXT.md` explaining one open-source issue well enough
+that someone who has never seen the codebase could work on it.
 
-Argument: a study directory created by `vis-oss init`, or an issue number to init first.
+Argument: a study directory created by `vis-oss <issue>`, or an issue number to create
+one first.
 
 ## Procedure
 
-1. **Read the contract.** `docs/agent-contract.md` in the vis-oss repo, or
-   `vis-oss schema`. It defines every field and, more importantly, what makes a study
-   good rather than merely valid.
+1. **Read `AGENT.md` in the study directory.** It is the spec: what each section must
+   contain, what makes a study good rather than merely complete, and what tutorial mode
+   changes. Follow it.
 
-2. **Init if needed.** From inside a checkout of the target project:
-   `vis-oss init <number>`. It infers the repo from git remotes (preferring `upstream`),
-   and pins the commit.
+2. **Create the directory if needed.** From inside a checkout of the target project:
+   `vis-oss <number>`. It infers the repository from the git remotes, pins the commit,
+   and warns if the checkout is behind upstream.
 
-3. **Read the issue completely**, including every comment. Issues often contain the
-   maintainer's own doubts about the obvious solution — that material belongs in
-   `open_questions`, and it is usually the most valuable thing on the page.
+3. **Read the issue completely, including every comment.** Issues often contain the
+   maintainer's own doubts about the obvious solution. That material is usually the most
+   valuable thing on the page and belongs under *Open questions*.
 
-4. **Find the code.** Trace the actual execution path, do not guess from file names.
-   Fill `entry_points` as a *reading order*: where a newcomer starts, and why each file
-   matters.
+4. **Trace the real execution path.** Do not guess from file names. Read every line you
+   cite and verify each symbol exists at the line you claim.
 
-5. **Hunt for prior art before designing anything.** Has this codebase already solved a
-   structurally identical problem elsewhere — a different index type, a different
-   backend, a sibling subsystem? Search for the *phrasing* of the feature, not only its
-   nouns. Prior art converts a design argument into a precedent and is the single
-   highest-value thing a study can carry. If there genuinely is none, say so explicitly
-   rather than leaving the list empty and ambiguous.
+5. **Hunt for prior art before designing anything.** Has this project already solved a
+   structurally similar problem elsewhere? Search for the *phrasing* of the feature, not
+   only its nouns. This is the highest-value section in the study.
 
-6. **Verify every anchor symbol is distinctive.** Before writing an anchor, grep its
-   symbol and confirm it appears once. `fn execute(` in a file with six execute methods
-   will resolve to the wrong one and silently mislead. Prefer a signature with its
-   parameters, a constant name, or a log message.
+6. **Write the examples.** At least one showing today's behaviour and one showing the
+   target. Check `benchmarks/`, `test_data/` and any datagen scripts for real data
+   before writing a generator.
 
-7. **Write the examples.** At least one `current` and one `proposed`. Honour `mode`:
-   in `tutorial` mode write comments and `TODO`s that direct the reader precisely
-   without writing the implementation for them. Every example needs a `run` command
-   that works from a stated directory. Prefer a real dataset over synthetic data when
-   the project ships one — check `benchmarks/` and any datagen scripts first.
-
-8. **Validate, and fix what it names.** `vis-oss validate <dir>` must pass with zero
-   errors before you report done. Then `vis-oss render <dir>` and read it as a
-   newcomer would.
+7. **Read the finished `CONTEXT.md` as a newcomer would**, and fix what does not land.
 
 ## Rules
 
-- **Never invent a line number.** Read the file. If an anchor cannot be verified, omit
-  it rather than guessing — a confident wrong pointer is worse than no pointer.
-- **Do not post anything to GitHub.** This command investigates and writes local files.
-  Issue comments and PRs are the user's to send.
-- **Report what you could not determine.** A study that admits an unknown is more useful
-  than one that papers over it.
-- **Correct earlier files if the code moved mid-investigation.** If you pull during the
-  work, re-verify anchors and re-pin before finishing.
+- **Never invent a line number, an API, or a flag.** Everything you write will be
+  trusted by someone who cannot check it cheaply.
+- **Do not post anything to GitHub.** Issue comments and pull requests are the user's to
+  send.
+- **Say what you could not determine** rather than papering over it.

@@ -1,46 +1,24 @@
-//! `vis-oss init` — create the skeleton an investigating agent fills in.
+//! `vis-oss init` — create the directory an agent fills in.
 //!
-//! Everything here is mechanical: read the issue, read the checkout, write a
-//! well-formed but empty [`Study`]. No judgement is applied, because judgement is the
-//! agent's job and this tool must stay testable and deterministic.
+//! Everything here is mechanical: read the issue, read the checkout, write the
+//! skeleton. No judgement is applied, because judgement is the agent's job and this
+//! part must stay predictable.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context as _, Result};
 use serde_json::Value;
 
 use crate::git::{self, Staleness};
-use crate::study::{Extra, Issue, Mode, Pin, Study, SCHEMA_VERSION};
+use crate::template::{self, AGENT_CONTRACT};
 
 /// Default base directory for studies, under the user's home.
 ///
 /// Outside any repository on purpose. A study written inside the project it describes
-/// shows up in `git status` and can be committed by accident into the very PR the
-/// contributor is preparing; keeping it out of the tree removes that risk entirely
-/// rather than defending against it.
+/// shows up in `git status` and can be committed by accident into the very pull request
+/// the contributor is preparing.
 pub const DEFAULT_BASE: &str = "vis-oss";
-
-/// `<base>/<owner>/<name>/<issue>/` — the layout studies are filed under.
-///
-/// Keyed by the full `owner/name` rather than the bare repository name so that two
-/// projects that happen to share a name do not collide.
-fn study_path(base: &Path, repo: &str, number: u64) -> PathBuf {
-    let mut path = base.to_path_buf();
-    for part in repo.split('/').filter(|p| !p.is_empty()) {
-        path.push(part);
-    }
-    path.push(number.to_string());
-    path
-}
-
-/// The user's home directory, from the environment.
-fn home() -> Option<PathBuf> {
-    std::env::var_os("HOME")
-        .or_else(|| std::env::var_os("USERPROFILE"))
-        .map(PathBuf::from)
-        .filter(|p| !p.as_os_str().is_empty())
-}
 
 pub struct InitOptions {
     pub number: u64,
@@ -48,18 +26,13 @@ pub struct InitOptions {
     pub repo: Option<String>,
     /// Base directory to file the study under. Defaults to `~/vis-oss`.
     ///
-    /// The study itself always lands at `<base>/<owner>/<name>/<number>/`, so pointing
+    /// The study lands at `<base>/<owner>/<name>/<number>/` either way, so pointing
     /// several issues at one base keeps them organised rather than colliding.
     pub base: Option<PathBuf>,
-    pub mode: Mode,
-    /// Checkout the anchors will refer to. Defaults to the enclosing repository.
+    /// Write finished code in examples rather than exercises.
+    pub solution: bool,
+    /// Checkout to study. Defaults to the enclosing repository.
     pub source: Option<PathBuf>,
-}
-
-pub struct InitOutcome {
-    pub dir: PathBuf,
-    pub study: Study,
-    pub notes: Vec<String>,
 }
 
 /// Everything `init` needs to know before it is willing to write anything.
@@ -73,9 +46,9 @@ pub struct Plan {
 
 /// Work out where the study goes and whether the checkout is worth studying yet.
 ///
-/// Split from [`init`] so the caller can put a decision in front of the user — a study
-/// written against a checkout that is hundreds of commits behind describes code that
-/// no longer exists, and no amount of care downstream repairs that.
+/// Split from [`init`] so the caller can put a decision in front of the user: a study
+/// written against a checkout that is hundreds of commits behind describes code that no
+/// longer exists, and nothing downstream repairs that.
 pub fn plan(opts: &InitOptions) -> Result<Plan> {
     let mut notes = Vec::new();
     let cwd = std::env::current_dir()?;
@@ -120,7 +93,8 @@ pub fn plan(opts: &InitOptions) -> Result<Plan> {
     })
 }
 
-pub fn init(opts: &InitOptions, plan: Plan) -> Result<InitOutcome> {
+/// Write the study skeleton. Returns the directory created.
+pub fn init(opts: &InitOptions, plan: Plan) -> Result<(PathBuf, Vec<String>)> {
     let Plan {
         source,
         repo,
@@ -131,103 +105,85 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<InitOutcome> {
 
     let commit = git::head_commit(&source).unwrap_or_default();
     if commit.is_empty() {
-        notes.push("could not read HEAD — pin.commit left empty".to_string());
+        notes.push("could not read HEAD — the study will not record a commit".to_string());
     }
 
     let issue = match fetch_issue(&repo, opts.number) {
         Ok(issue) => issue,
         Err(e) => {
-            notes.push(format!("gh lookup failed ({e}); wrote a stub issue block"));
-            Issue {
-                repo: repo.clone(),
-                number: opts.number,
-                ..Issue::default()
-            }
+            notes.push(format!("gh lookup failed ({e}); wrote a stub header"));
+            Issue::stub(opts.number)
         }
     };
-    let study = Study {
-        schema_version: SCHEMA_VERSION,
-        issue,
-        pin: Pin {
-            root: source.to_string_lossy().into_owned(),
-            commit,
-            extra: Extra::default(),
-        },
-        mode: opts.mode,
-        summary: None,
-        current_behavior: None,
-        desired_behavior: None,
-        entry_points: Vec::new(),
-        prior_art: Vec::new(),
-        open_questions: Vec::new(),
-        examples: Vec::new(),
-        verify: Vec::new(),
-        extra: Extra::default(),
-    };
 
-    if dir.join("study.json").exists() {
+    if dir.join("CONTEXT.md").exists() {
         bail!(
-            "{} already contains a study.json — delete it or pass a different directory",
+            "{} already contains a CONTEXT.md — delete it or pass a different base",
             dir.display()
         );
     }
     std::fs::create_dir_all(dir.join("examples"))
         .with_context(|| format!("creating {}", dir.display()))?;
-    std::fs::write(
-        dir.join("study.json"),
-        serde_json::to_string_pretty(&study)? + "\n",
-    )?;
-    std::fs::write(dir.join("README.md"), readme(&study))?;
 
-    Ok(InitOutcome { dir, study, notes })
+    let context = template::context_md(&template::Context {
+        repo: &repo,
+        number: opts.number,
+        title: &issue.title,
+        url: &issue.url,
+        state: &issue.state,
+        created_at: &issue.created_at,
+        labels: &issue.labels,
+        body: &issue.body,
+        source: &source.to_string_lossy(),
+        commit: &commit,
+        tutorial: !opts.solution,
+    });
+    std::fs::write(dir.join("CONTEXT.md"), context)?;
+    std::fs::write(dir.join("AGENT.md"), AGENT_CONTRACT)?;
+
+    Ok((dir, notes))
 }
 
-fn readme(study: &Study) -> String {
-    let i = &study.issue;
-    format!(
-        r"# {repo} #{number}
+/// `<base>/<owner>/<name>/<issue>/` — the layout studies are filed under.
+///
+/// Keyed by the full `owner/name` rather than the bare repository name so that two
+/// projects that happen to share a name do not collide.
+fn study_path(base: &Path, repo: &str, number: u64) -> PathBuf {
+    let mut path = base.to_path_buf();
+    for part in repo.split('/').filter(|p| !p.is_empty()) {
+        path.push(part);
+    }
+    path.push(number.to_string());
+    path
+}
 
-{title}
+fn home() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+        .filter(|p| !p.as_os_str().is_empty())
+}
 
-{url}
+struct Issue {
+    title: String,
+    url: String,
+    state: String,
+    created_at: String,
+    labels: Vec<String>,
+    body: String,
+}
 
-A **vis-oss study**: a structured investigation of one open-source issue, so you can
-understand it before you change anything.
-
-## Layout
-
-| Path | What it is |
-|---|---|
-| `study.json` | The study itself. Source of truth — everything else is derived. |
-| `examples/` | Runnable files: what the code does today, and what it should do after. |
-| `README.md` | This file. |
-
-## Reading it
-
-```sh
-vis-oss render .        # the study, formatted, with drift warnings
-vis-oss validate .      # is it complete, and has the code moved under it?
-```
-
-`render` re-resolves every code reference against the checkout, so a study that has
-gone stale says so instead of quietly pointing at the wrong lines. To keep a copy in
-version control: `vis-oss render . > context.md`.
-
-## Filling it in
-
-`study.json` starts mostly empty; an investigating agent fills it. See the
-[agent contract](https://github.com/jayfeng20/vis-oss/blob/main/docs/agent-contract.md)
-for what each field means and what makes a study good rather than merely valid.
-",
-        repo = i.repo,
-        number = i.number,
-        title = if i.title.is_empty() {
-            "(title unavailable)"
-        } else {
-            &i.title
-        },
-        url = i.url,
-    )
+impl Issue {
+    fn stub(number: u64) -> Self {
+        Self {
+            title: format!("(could not read issue #{number})"),
+            url: String::new(),
+            state: String::new(),
+            created_at: String::new(),
+            labels: Vec::new(),
+            body: String::new(),
+        }
+    }
 }
 
 fn fetch_issue(repo: &str, number: u64) -> Result<Issue> {
@@ -240,20 +196,20 @@ fn fetch_issue(repo: &str, number: u64) -> Result<Issue> {
             repo,
             "--json",
         ])
-        .arg("number,title,url,state,labels,createdAt,body,comments")
+        .arg("title,url,state,labels,createdAt,body")
         .output()
         .context("running `gh` (is the GitHub CLI installed and authenticated?)")?;
     if !out.status.success() {
         bail!("{}", String::from_utf8_lossy(&out.stderr).trim());
     }
     let v: Value = serde_json::from_slice(&out.stdout).context("parsing gh output")?;
+    let text = |key: &str| v[key].as_str().unwrap_or_default().to_string();
 
     Ok(Issue {
-        repo: repo.to_string(),
-        number,
-        title: v["title"].as_str().unwrap_or_default().to_string(),
-        url: v["url"].as_str().unwrap_or_default().to_string(),
-        state: v["state"].as_str().unwrap_or_default().to_string(),
+        title: text("title"),
+        url: text("url"),
+        state: text("state"),
+        created_at: text("createdAt").chars().take(10).collect(),
         labels: v["labels"]
             .as_array()
             .map(|a| {
@@ -262,13 +218,6 @@ fn fetch_issue(repo: &str, number: u64) -> Result<Issue> {
                     .collect()
             })
             .unwrap_or_default(),
-        created_at: v["createdAt"]
-            .as_str()
-            .unwrap_or_default()
-            .chars()
-            .take(10)
-            .collect(),
-        body: v["body"].as_str().map(ToString::to_string),
-        extra: Extra::default(),
+        body: text("body"),
     })
 }
