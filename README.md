@@ -41,7 +41,8 @@ Then point an agent at it:
 > directory. I'm working in `~/Coding/lance`.
 
 Read the markdown when it's done. [Here is a finished
-one.](examples/lance-format/lance/804/CONTEXT.md)
+one](examples/lance-format/lance/804/CONTEXT.md), for
+[an open issue in lance](https://github.com/lance-format/lance/issues/804).
 
 The repository, root and commit come from git — `upstream` wins over `origin`, since on
 a fork that's where the issue lives. If your clone is behind upstream, vis-oss says so
