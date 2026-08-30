@@ -19,26 +19,45 @@ const TARGETS: &[(&str, &str, bool)] = &[
 ];
 
 /// The command body. `$ARGUMENTS` is the issue number the user typed.
-const BODY: &str = r"Run `vis-oss $ARGUMENTS` from the current repository, then fill in the study it creates.
+const BODY: &str = r"Run `vis-oss $ARGUMENTS` from the repository you are in, then fill in the study it creates.
 
-The command prints the directory it made. In that directory:
+The command prints the directory it made. In it:
 
-- `AGENTS.md` is the contract. Read it first and follow it — it defines what each
-  section of `CONTEXT.md` must contain and what makes a study good rather than merely
-  complete.
-- `CONTEXT.md` is the study. It arrives with its headings in place and the issue body
-  already pasted in. Fill in every empty section.
-- `examples/` is where the runnable before/after files go.
+- `AGENTS.md` is the contract. **Read it fully before writing anything** — it defines
+  what each section must contain, how examples are structured and annotated, and what
+  makes a study useful rather than merely complete. Follow it.
+- `CONTEXT.md` is the study, with its headings in place and the issue body pasted in.
+  Fill in every empty section.
+- The examples go alongside them, numbered: `00_` for setup if it is needed, then
+  `01_`, `02_` for the behaviours worth watching.
 
-Investigate from the repository you are in now, not from the study directory — you need
-to search and read the project's source. Write your findings into the study directory
-using its absolute path.
+Investigate from the repository you are in, not from the study directory — you need to
+search and read the project's source. Write into the study directory by absolute path.
 
-If `vis-oss` reports the checkout is behind upstream, stop and tell the user rather than
-writing a study against code that has already moved.
+## Make the examples actually run
 
-Never invent a line number, an API, or a flag. Read the file and verify the symbol
-exists at the line you cite. Do not post anything to GitHub.";
+They default to complete, runnable code, and running them is the point: an example you
+executed carries real output in its provenance line, and one you only wrote is a guess
+about an API. So, for each example:
+
+1. Set up whatever it needs to run. For an interpreted binding, use the project's own
+   tooling (`uv run`, `poetry run`) — nothing to create. For Rust, the study root holds
+   one Cargo project per repository, one level above the issue directory: create
+   `Cargo.toml` there with a path dependency on the checkout if it does not exist, and
+   add a `[[bin]]` for your example if it does. `AGENTS.md` shows the layout.
+2. Run it. Fix what breaks.
+3. Put the real command and the real output in the file's provenance line.
+
+If you genuinely cannot run one — it needs a large download, credentials, or hardware you
+do not have — say so in that line and say why. Never leave provenance out.
+
+## If the checkout is behind
+
+`vis-oss` will say so and stop. Tell the user, and offer `vis-oss <issue> --sync-upstream`,
+which fast-forwards first. Do not write a study against code that has already moved.
+
+Never invent a line number, an API, or a flag: read the file and verify the symbol is
+there. Do not modify the project's source, and do not post anything to GitHub.";
 
 /// Install the command for every supported agent whose directory already exists.
 pub fn install() -> Result<Vec<PathBuf>> {
@@ -73,6 +92,28 @@ fn contents(frontmatter: bool) -> String {
     } else {
         format!("{BODY}\n")
     }
+}
+
+/// Installed command files whose contents no longer match this binary.
+///
+/// The command is a copy, so it goes stale the moment vis-oss is upgraded — and a stale
+/// one quietly instructs the agent to do the wrong thing, which is invisible until a
+/// study comes out wrong. Cheap to check on every run.
+pub fn outdated() -> Vec<PathBuf> {
+    let Some(home) = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+    else {
+        return Vec::new();
+    };
+    TARGETS
+        .iter()
+        .filter_map(|(_, subdir, frontmatter)| {
+            let path = home.join(subdir).join("vis-oss.md");
+            let current = std::fs::read_to_string(&path).ok()?;
+            (current != contents(*frontmatter)).then_some(path)
+        })
+        .collect()
 }
 
 /// Directories checked, for reporting when none were found.

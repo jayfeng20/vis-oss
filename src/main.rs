@@ -101,7 +101,13 @@ fn main() -> Result<()> {
         }
     }
 
-    let (dir, notes) = scaffold::init(&opts, plan)?;
+    let (dir, mut notes) = scaffold::init(&opts, plan)?;
+    for path in command::outdated() {
+        notes.push(format!(
+            "{} was written by an older vis-oss; run --install-command to refresh it",
+            path.display()
+        ));
+    }
     for note in &notes {
         eprintln!("note: {note}");
     }
