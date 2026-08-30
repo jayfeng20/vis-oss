@@ -61,7 +61,6 @@ asks before writing, because a study describes code at one commit.
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
 | `--solution` | Finished code in examples, instead of exercises for you to complete |
-| `--yes` | Don't prompt when the checkout is behind upstream |
 | `--install-command` | (Re)install the `/vis-oss` command and exit |
 
 ## License
