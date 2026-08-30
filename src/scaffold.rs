@@ -139,7 +139,7 @@ pub fn init(opts: &InitOptions, plan: Plan) -> Result<(PathBuf, Vec<String>)> {
         tutorial: !opts.solution,
     });
     std::fs::write(dir.join("CONTEXT.md"), context)?;
-    std::fs::write(dir.join("AGENT.md"), AGENT_CONTRACT)?;
+    std::fs::write(dir.join("AGENTS.md"), AGENT_CONTRACT)?;
 
     Ok((dir, notes))
 }
