@@ -157,20 +157,6 @@ fn header(out: &mut String, study: &Study, ctx: &Ctx) {
             .unwrap_or_default();
         let _ = writeln!(out, "{}", ctx.dim(&format!("pinned to {short}{drift}")));
     }
-    if !study.issue.claims.is_empty() {
-        for c in &study.issue.claims {
-            let tail = if c.opened_pr {
-                "opened a PR"
-            } else {
-                "no PR opened"
-            };
-            let _ = writeln!(
-                out,
-                "{}",
-                ctx.dim(&format!("claimed by @{} {} — {tail}", c.user, c.at))
-            );
-        }
-    }
     let _ = writeln!(
         out,
         "{}",

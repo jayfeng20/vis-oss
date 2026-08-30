@@ -56,14 +56,6 @@ fn header(out: &mut String, study: &Study) {
             "> Anchors resolved against `{s}`. Run `vis-oss validate` to check they still hold.\n"
         );
     }
-    for c in &i.claims {
-        let tail = if c.opened_pr {
-            "and opened a PR"
-        } else {
-            "but never opened a PR"
-        };
-        let _ = writeln!(out, "> Claimed by @{} on {} {tail}.\n", c.user, c.at);
-    }
 }
 
 fn problem(out: &mut String, study: &Study) {

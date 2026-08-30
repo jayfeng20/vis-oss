@@ -99,26 +99,9 @@ pub struct Issue {
     /// The issue body, verbatim. Kept so the study is readable offline.
     #[serde(default)]
     pub body: Option<String>,
-    /// People who have said they are working on this. An unfulfilled claim is not a
-    /// blocker, but you should know about it before you open a PR.
-    #[serde(default)]
-    pub claims: Vec<Claim>,
 
     #[serde(flatten, default)]
     pub extra: Extra,
-}
-
-/// A prior "I'll take this" comment.
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct Claim {
-    pub user: String,
-    #[serde(default)]
-    pub at: String,
-    #[serde(default)]
-    pub url: String,
-    /// Whether the claimant ever opened a PR. A claim with no PR after months is stale.
-    #[serde(default)]
-    pub opened_pr: bool,
 }
 
 /// The checkout a study was written against.

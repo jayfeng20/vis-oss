@@ -16,7 +16,7 @@ Argument: a study directory created by `vis-oss init`, or an issue number to ini
 
 2. **Init if needed.** From inside a checkout of the target project:
    `vis-oss init <number>`. It infers the repo from git remotes (preferring `upstream`),
-   pins the commit, and records anyone who already claimed the issue.
+   and pins the commit.
 
 3. **Read the issue completely**, including every comment. Issues often contain the
    maintainer's own doubts about the obvious solution — that material belongs in

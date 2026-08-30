@@ -13,15 +13,7 @@
       "rust"
     ],
     "created_at": "2023-04-24",
-    "body": "When user does a ANN query, show warnings if the index was not built for the column, for potentially slow query speed. \r\n\r\nHowever, doing so blindly makes it really annoying for smaller datasets that really don't need an ANN index. One alternative could be that during the KNN (flat search) execution, if the runtime exceed a certain threshold to print the warning.",
-    "claims": [
-      {
-        "user": "gprasadsowmya",
-        "at": "2026-06-10",
-        "url": "https://github.com/lance-format/lance/issues/804#issuecomment-4673001120",
-        "opened_pr": false
-      }
-    ]
+    "body": "When user does a ANN query, show warnings if the index was not built for the column, for potentially slow query speed. \r\n\r\nHowever, doing so blindly makes it really annoying for smaller datasets that really don't need an ANN index. One alternative could be that during the KNN (flat search) execution, if the runtime exceed a certain threshold to print the warning."
   },
   "pin": {
     "root": "/Users/jayfeng/Coding/lance",
