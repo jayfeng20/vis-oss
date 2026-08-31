@@ -150,9 +150,18 @@ hunting for a data size or a parameter that makes a measurement come out, and no
 project would itself call a benchmark — a trained index, a large generated dataset, a full
 load of real data.
 
+**These limits are on what you execute, not on what you write.** They exist because your
+time is being spent without anyone choosing to spend it. The file the reader runs is under
+no such limit: they typed the command, so it may build indexes, write two sizes of data,
+and time queries if that is what the issue is about. Do not read "do not train an index"
+as "the example must not train one" — that turns a budget for you into a hole in the
+deliverable.
+
 Size still matters, because someone else pays for it: write the **smallest input that
-reaches the code path**. A query over a thousand rows takes the same branch as one over a
-million, and the branch is what is being taught.
+answers the question**. Usually that is tiny, because a query over a thousand rows takes
+the same branch as one over a million and the branch is what is being taught. But when the
+issue is *about* the difference between those two, one row count cannot show it, and the
+example needs both.
 
 ### A long run is a conversation, not a file
 
@@ -163,6 +172,32 @@ running it would settle, roughly what that would cost, and that you will do it i
 That offer is the whole mechanism. The user knows what their machine and their afternoon
 are worth; you do not. A study that arrives in minutes and offers to go further beats one
 that spent an hour deciding for them.
+
+### Probe the question the issue asks
+
+An example is not a tour of everything you learned. It exists to make the issue's own
+question concrete, and it is worth re-reading the issue and asking what would have to be
+true or false for it to be answered.
+
+Two failure modes, and the second is the expensive one:
+
+- **Adjacent behaviour becomes extra files.** While reading you will find neighbouring
+  cases — a related warning that does fire, a second way to reach the same branch. Those
+  belong in the study's prose, where a sentence covers them. A probe each turns one
+  question into three, and the reader now has to work out which of the three is the issue.
+- **The question gets dodged.** If the issue asks *when is this slow enough to warn*, a
+  probe that shows the slow branch being taken has shown the setup and skipped the
+  question. Cost is the subject, so the probe has to make cost visible: two sizes, indexed
+  against unindexed, and a timing loop. Showing that both sizes take the same branch,
+  without timing either, answers a question nobody asked.
+
+The same holds in reverse. If the issue is about a wrong result, do not time anything —
+timing would be the tour. Match the probe to the claim being made.
+
+An example that needs a hundred lines of harness before it reaches the project's API is
+teaching the harness. If capturing output or driving the API honestly takes that much,
+that is worth a sentence in *What I could not verify*, because it is something the next
+contributor will hit too.
 
 ### Which files to create
 
