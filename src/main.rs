@@ -139,7 +139,7 @@ fn main() -> Result<()> {
     // not going to happen.
     if !opts.redo {
         if let Some(found) = scaffold::existing(&plan.dir, &plan.source) {
-            return report_existing(&found.dir, &found.pinned, &found.head);
+            return report_existing(&found.dir, &found.pinned, &found.head, &opts);
         }
     }
 
@@ -211,7 +211,12 @@ fn sync_only(source: Option<&Path>) -> Result<()> {
 }
 
 /// Point at a study that already exists, and say whether the code has moved under it.
-fn report_existing(dir: &Path, pinned: &Option<String>, head: &Option<String>) -> Result<()> {
+fn report_existing(
+    dir: &Path,
+    pinned: &Option<String>,
+    head: &Option<String>,
+    opts: &InitOptions,
+) -> Result<()> {
     println!("already studied: {}", dir.display());
     let short = |c: &String| c.chars().take(9).collect::<String>();
     match (pinned, head) {
@@ -227,8 +232,25 @@ fn report_existing(dir: &Path, pinned: &Option<String>, head: &Option<String>) -
         _ => {}
     }
     println!();
-    println!("nothing was overwritten. --redo deletes it and starts again.");
+    if opts.notes.is_empty() {
+        println!("nothing was overwritten. --redo deletes it and starts again.");
+    } else {
+        println!("nothing was overwritten — including your --note, which was NOT recorded.");
+        println!("To redo the study with it (the existing one is deleted, not kept):");
+        println!("  {}", redo_hint(opts.number, &opts.notes));
+    }
     Ok(())
+}
+
+/// The rerun that carries dropped notes into a fresh study, ready to paste.
+fn redo_hint(number: u64, notes: &[String]) -> String {
+    use std::fmt::Write as _;
+    let mut hint = format!("vis-oss {number} --redo");
+    for note in notes {
+        // Writing to a String cannot fail.
+        let _ = write!(hint, " --note \"{}\"", note.replace('"', "\\\""));
+    }
+    hint
 }
 
 /// Try to fast-forward, reporting either outcome. Returns whether the checkout is current.
@@ -321,6 +343,18 @@ mod tests {
         }
         assert!(Cli::try_parse_from(["vis-oss", "--update", "--install-command"]).is_err());
         assert!(Cli::try_parse_from(["vis-oss", "804", "--update"]).is_err());
+    }
+
+    #[test]
+    fn redo_hint_carries_every_note_and_survives_quotes() {
+        let notes = vec![
+            "look at flat_search.rs".to_string(),
+            "the plan says \"flat\"".to_string(),
+        ];
+        assert_eq!(
+            redo_hint(804, &notes),
+            "vis-oss 804 --redo --note \"look at flat_search.rs\" --note \"the plan says \\\"flat\\\"\""
+        );
     }
 
     #[test]
