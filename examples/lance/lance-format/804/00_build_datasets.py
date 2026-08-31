@@ -13,7 +13,7 @@ Then this file, from that same directory:
 
     uv run --frozen python <this file>
 
-Tutorial level: partial — this file is setup, so it is complete. The stub is in 01.
+Tutorial level: partial — this file is setup, so it is complete. The exercises are in 01.
 
 Not run, not compiled. APIs read against lance 324cedd9d:
 write_dataset at python/python/lance/dataset.py:7719, LanceDataset.create_index at

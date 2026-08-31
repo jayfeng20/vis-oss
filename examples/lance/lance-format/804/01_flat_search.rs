@@ -17,7 +17,8 @@
 //! Arrow and DataFusion among them — so expect minutes and do not read it as a hang. Run
 //! `00_build_datasets.py` first; this reads the datasets that writes.
 //!
-//! Tutorial level: partial — `median_ms` is yours to write.
+//! Tutorial level: partial — `median_ms` is yours to write, and the ANN plan marker
+//! yours to predict.
 //!
 //! Draft: neither run nor compiled. APIs read against lance 324cedd9d — Dataset::open at
 //! rust/lance/src/dataset.rs:514, Dataset::scan at :1674, Scanner::nearest at
@@ -77,9 +78,12 @@ async fn uses_ann(dataset: &Dataset, query: &Float32Array, use_index: bool) -> b
         .expect("nearest rejected the column or the query type");
     scan.use_index(use_index);
     let plan = scan.explain_plan(true).await.expect("explain_plan failed");
-    // The tests in the same file assert on this string: scanner.rs:9363 for the ANN path,
-    // :9872 for the flat one.
-    plan.contains("ANNSubIndex")
+    // Which substring marks the ANN path? A prediction to fill by reading, not running:
+    // the operators are declared in rust/lance/src/io/exec/knn.rs, and the tests assert
+    // on the same string — scanner.rs:9363 for the ANN path, :9872 for the flat one.
+    // The asserts in main() grade your answer.
+    let ann_marker: &str = todo!("the operator name an ANN plan contains");
+    plan.contains(ann_marker)
 }
 
 /// Take the query FROM the data. A random uniform vector in high-dimensional space is
