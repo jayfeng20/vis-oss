@@ -10,11 +10,11 @@ pub const AGENT_CONTRACT: &str = include_str!("../docs/agent-contract.md");
 /// How much of an example the reader is expected to write.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum Tutorial {
-    /// Comments and `TODO`s only. The reader writes every line.
+    /// Complete, runnable code — the whole thing worked through.
     Full,
     /// Scaffolding is present; the parts worth thinking about are left as stubs.
     Partial,
-    /// Complete, runnable code.
+    /// Comments and `TODO`s only. The reader writes every line.
     None,
 }
 
@@ -29,9 +29,9 @@ impl Tutorial {
 
     fn describes(self) -> &'static str {
         match self {
-            Tutorial::Full => "every line is yours to write, from `TODO`s",
+            Tutorial::Full => "complete and runnable as shipped",
             Tutorial::Partial => "scaffolding is written; the interesting parts are stubs",
-            Tutorial::None => "complete and runnable as shipped",
+            Tutorial::None => "every line is yours to write, from `TODO`s",
         }
     }
 }

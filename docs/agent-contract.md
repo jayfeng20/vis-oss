@@ -28,150 +28,135 @@ say why — an empty heading reads as unfinished work, not as a considered "none
 
 ## The sections
 
-**What this actually is.** Restate the issue in plain language for someone who has not
-read it. Not a summary of the text — an explanation of the problem. If the issue is
-badly worded or assumes context, this is where you supply what it assumes.
+**What this actually is.** The problem in plain language, for someone who has not read the
+issue — an explanation, not a summary. If the issue assumes context, supply it here.
 
-**What happens today.** The current behaviour, traced through real code. Name the
-functions and files that produce it. This is half of the before/after pair and it must
-be concrete enough to reproduce.
+**What happens today.** The current behaviour, traced through real code, naming the
+functions and files that produce it. Concrete enough to reproduce.
 
-**Where the code is.** A reading order, not a file listing. Three to six locations,
-each as `path/to/file.rs:123` followed by why a newcomer is looking at it. Trace the
-actual execution path — do not guess from file names. Read every line you cite, and
-omit anything you could not verify: a confident wrong pointer is worse than no pointer.
+**Where the code is.** A reading order, not a file listing: three to six `path/file.rs:123`
+locations, each with why a newcomer is looking at it. Trace the execution path rather than
+guessing from file names. Read every line you cite and omit what you could not verify — a
+confident wrong pointer is worse than none.
 
-**Prior art.** Existing code in this same project that already solves a structurally
-similar problem — another index type, another backend, a sibling subsystem. This is the
-highest-value section in the document, because it turns a design argument into a
-precedent: "here is how this codebase already answered this question" beats any amount
-of reasoning. Search for the *phrasing* of the feature, not only its nouns. If there
-genuinely is none, write "none found" and say where you looked.
+**Prior art.** Code in this project that already solves a structurally similar problem —
+another index type, another backend, a sibling subsystem. Usually the most valuable section,
+because it turns a design argument into a precedent. Search for the *phrasing* of the
+feature, not only its nouns. At most two, closest first. If there is none, say so and say
+where you looked.
 
-**Open questions.** Decisions the issue does not settle and the implementer cannot
-avoid. Each needs what changes depending on the answer, and your recommendation, so the
-reader can proceed without waiting. Write the recommendation as your reading and give the
-reason, so it can be argued with: "the sibling feature chose bytes, so bytes" invites a
-check, while "use bytes" asks to be obeyed. *"What should the threshold be?"* is not an open
-question. *"Time or bytes? Time is what users feel, but makes behaviour
-machine-dependent and the test flaky; the sibling feature chose bytes"* is. Do not
-manufacture these — if the issue is genuinely unambiguous, say so.
+**Open questions.** Decisions the issue leaves open that the implementer cannot avoid. Each
+needs what turns on the answer and your recommendation, given as a reading with its reason
+so it can be argued with. *"What should the threshold be?"* is not one. *"Time or bytes?
+Time is what users feel but makes the test flaky; the sibling feature chose bytes"* is. Do
+not manufacture them.
 
-**Examples.** What is in `examples/`, what each demonstrates, and the exact command to
-run it.
+**Examples.** What each file demonstrates, and the exact command to run it.
 
-**How to verify.** The build, test and lint commands for the surfaces this touches,
-taken from the project's own docs rather than assumed.
+**How to verify.** Build, test and lint commands for the surfaces this touches, from the
+project's own docs.
 
-**What I could not verify.** Every claim above that rests on inference rather than
-something you read, plus code you looked for and could not find, plus questions worth
-putting to the maintainers. This section is what makes the rest of the study safe to
-trust, because it bounds it. Leaving it empty asserts that everything above is solid, so
-leave it empty only when that is true.
+**What I could not verify.** Claims above resting on inference rather than something you
+read, code you looked for and could not find, and questions for the maintainers. This is
+what makes the rest safe to trust, because it bounds it. Leave it empty only when that is
+honestly true.
 
 **After — what the issue asks for.** Last, because it is the only section describing code
-that does not exist yet. What is different once this is fixed, seen from outside: an API
-that changes shape, or the same calls behaving differently — a warning appears, a write
-gets faster, a scan stops reading a column. Use the same `file:line` annotations as the
-examples. State it precisely enough to test: "a warning is shown" is not enough, "one
-warning per query naming the column, and none for a small dataset or an indexed query" is.
-This is your reading of the issue, not a decision — the maintainers own the real shape.
+that does not exist. What differs once this is fixed, seen from outside, with the same
+`file:line` annotations as the examples. Precise enough to test: not "a warning is shown"
+but "one warning per query naming the column, and none for a small dataset or an indexed
+query". Your reading, not a decision — the maintainers own the real shape.
+
+## Shapes of issue
+
+Most issues are one of four kinds, and the kind decides what the study must show. Work out
+which you have before writing anything — the tracker's own labels usually say.
+
+**Feature request** — it does not exist yet. Show three things: *before*, the current
+behaviour with the feature absent, run and measured; *prior art*, at most two places in
+this project that already solved a structurally similar problem, closest first; and
+*after*, described only. There is no probe for the target behaviour, because the code
+producing it does not exist.
+
+**Bug** — something is wrong. The study is a reproduction: the setup and the call that
+produce the wrong result, and an assertion of what is wrong. At `full` that file fails
+today and passes once the bug is fixed, which makes it the acceptance check. A similar past
+fix in the history is worth more here than a similar feature.
+
+**Performance** — something is too slow. As for a feature request, except the measurement
+is the deliverable rather than the framing: time the slow path, time whatever the project
+already offers that is faster, at sizes far enough apart to show the trend.
+
+**Documentation** — something is unexplained or wrong on the page. Often there is nothing
+to run; say so in *Examples* rather than inventing a probe, and spend the study on where
+the documented behaviour actually lives, so the page can be checked against the code.
+
+An issue can be two of these. Pick the one the reporter is asking for: #804 asks for a
+warning that does not exist, so it is a feature request, even though what it warns about
+is a performance problem.
 
 ## The examples are the deliverable
 
 Everything else in `CONTEXT.md` frames them. An example is a **runnable probe of what the
-code does today**, annotated so that reading it teaches the code path — not just the API.
+code does today**, annotated so that reading it teaches the code path, not just the API.
 
 Write each probe **twice, from two vantage points**:
 
 | written in | what it gives the reader |
 |---|---|
-| the language the behaviour is **observed** in | what a user actually experiences, which is why the issue was filed at all |
-| the language the behaviour is **implemented** in | a probe that runs against their own working tree with nothing rebuilt in between, so re-running it after the change is a working acceptance check |
+| the language the behaviour is **observed** in | what a user actually experiences, which is why the issue was filed |
+| the language the behaviour is **implemented** in | a probe that runs against their own tree with nothing rebuilt in between, so re-running it after the change is an acceptance check |
 
-For a Rust library with Python bindings, a user meets the slow query in Python — so that
-probe is Python, and its annotations point down into the Rust. The second is Rust, calling
-the same path directly.
+For a Rust library with Python bindings, a user meets the slow query in Python — that
+probe is Python, annotated downward into the Rust. The second is Rust, calling the same
+path directly.
 
-Note the second row says *implemented*, not *where the fix will land*. Where the fix lands
-is the maintainers' call and the study does not get to assume it; where the behaviour lives
-today is something you can read.
+*Implemented*, not *where the fix will land*: the maintainers own where it lands, and this
+study does not get to assume it. And the implementation language always reaches the
+behaviour, because a binding is built on the core's public API and cannot expose what the
+core does not. If you cannot reach it from there, you have misread where it lives — find
+the entry point the binding itself calls rather than reaching into internals.
 
-**The implementation language always works, which is why this is a rule and not a
-preference.** A binding is built on the core's public API, so anything reachable from
-Python is reachable from Rust by construction — the binding cannot expose what the core
-does not. The reverse is not true, which is the whole reason for two files: the observation
-language is the one that may fall short.
+When both are the same language — a binding-layer bug, or a project with no bindings —
+there is one file. Say so in one line in *Examples*, so it reads as decided.
 
-Two consequences worth stating:
-
-- When the two are the same language — a bug that lives entirely in the binding layer, or a
-  project with no bindings at all — there is one file, not two. Say so in one line in the
-  study's *Examples* section, so the reader knows it was decided rather than forgotten.
-- If you find yourself unable to reach the behaviour from the implementation language, you
-  have most likely misread where it lives. Do not reach into internals to force it; go back
-  and find the public entry point the binding itself calls.
-
-Give both the same number and let the extension separate them: `01_flat_search.py` and
-`01_flat_search.rs` are one probe seen from two sides, and numbering them `01` and `02`
-would claim they are two behaviours.
-
-One setup file serves both where the data is the same on disk, which it usually is. Write
-it in whichever language is cheaper for the reader to get running, and say in the other
-probe that it depends on it.
+Both share a number, separated by extension: `01_flat_search.py` and `01_flat_search.rs`
+are one probe from two sides. One setup file serves both, in whichever language is cheaper
+for the reader to run.
 
 ### You write the code; you do not execute it
 
-**Nothing here is run, and nothing is compiled.** Executing a file means paying whatever
-the project charges for a first execution, and compiling a Rust one against a large
-workspace means building its whole dependency graph — for a project pulling in Arrow and
-DataFusion that is around nine hundred crates before the compiler reaches your thirty
-lines. Neither cost has anything to do with how small your example is, and both are work
-the reader does anyway on their own tree.
+**Nothing here is run, and nothing is compiled.** A first execution costs whatever the
+project charges to build — for a Rust workspace, its whole dependency graph — which has
+nothing to do with how small your example is, and is work the reader does anyway on their
+own tree.
 
-So the check is reading: open the file, find the symbol, confirm the signature. Name the
-paths you read in the provenance line, so the reader can see what was confirmed and what
-was taken on trust.
+So the check is reading: open the file, find the symbol, confirm the signature, and name
+the paths you read in the provenance line.
 
-What you owe instead is a file that matches its **tutorial level** — complete at `none`,
-scaffolded with stubs at `partial`, `TODO`s at `full`. The level is the contract with the
-reader about how finished this is, and it is the honest lever you do have. It is also what
-bounds the risk: `partial`, the default, ships the part you can stand behind from reading
-and leaves the rest marked, so an uncompiled file is not pretending to be a working one.
+Say there that the file is a draft. An uncompiled Rust example will sometimes not compile,
+and the reader's first `cargo check` is where that surfaces — a minute if they were told,
+an afternoon of doubt if they were not.
 
-**Say that it is a draft, in the file.** These are templates checked by reading, so a Rust
-example nobody compiled will sometimes not compile — a trait bound, a generic parameter, an
-async runtime detail — and the reader's first `cargo check` is where that surfaces. That is
-expected, and a reader who was told costs a minute where one who assumed it built clean
-loses an afternoon deciding whether they broke it. One line in the provenance is enough.
+Do not go further: no running an example to see whether it works, no throwaway scripts
+hunting for a size or a parameter that makes a measurement come out, nothing the project
+would call a benchmark.
 
-Do not go further. No running an example to see whether it works, no throwaway scripts
-hunting for a data size or a parameter that makes a measurement come out, and nothing the
-project would itself call a benchmark — a trained index, a large generated dataset, a full
-load of real data.
-
-**These limits are on what you execute, not on what you write.** They exist because your
-time is being spent without anyone choosing to spend it. The file the reader runs is under
-no such limit: they typed the command, so it may build indexes, write two sizes of data,
-and time queries if that is what the issue is about. Do not read "do not train an index"
-as "the example must not train one" — that turns a budget for you into a hole in the
-deliverable.
+**Those limits are on what you execute, not on what you write.** The reader typed the
+command, so their file may build indexes, write a large dataset and time queries when the
+issue calls for it. Reading "do not train an index" as "the example must not train one"
+turns a budget for you into a hole in the deliverable.
 
 Size still matters, because someone else pays for it: write the **smallest input that
-answers the question**. Usually that is tiny, because a query over a thousand rows takes
-the same branch as one over a million and the branch is what is being taught. But when the
-issue is *about* the difference between those two, one row count cannot show it, and the
-example needs both.
+answers the question**. Usually that is tiny — a thousand rows takes the same branch as a
+million. When the issue is *about* the difference between those two, it is not.
 
 ### A long run is a conversation, not a file
 
-Some questions do need executing — does this reproduce, and how slow is slow. Finish the
-study first. Then, in your reply to the user and not in the study, say in one line what
-running it would settle, roughly what that would cost, and that you will do it if asked.
-
-That offer is the whole mechanism. The user knows what their machine and their afternoon
-are worth; you do not. A study that arrives in minutes and offers to go further beats one
-that spent an hour deciding for them.
+Some questions need executing: does this reproduce, how slow is slow. Finish the study,
+then say in your reply — not in the study — what running it would settle, roughly what it
+would cost, and that you will do it if asked. Never start one unasked. The user knows what
+their afternoon is worth; you do not.
 
 ### Derive the probe from the issue's own words
 
@@ -280,11 +265,12 @@ posted to a stranger.
 
 ### Making them runnable
 
-**Python, or any interpreted binding:** nothing for *you* to create — the project already
-has an environment, and the reader's job is to enter it. See *Getting an environment* below.
+**Python, or any interpreted binding:** nothing for *you* to create. See *Getting an
+environment* below.
 
-**Rust:** one Cargo project per *project studied*, not per issue, at the repository level
-of the study root — one directory above the issue:
+**Rust:** one Cargo project per *project studied*, not per issue, one directory above the
+issue. A per-issue project means a separate `target/`, so the whole dependency graph is
+rebuilt for every study; sharing one builds it once.
 
 ```
 ~/vis-oss/lance/lance-format/          <- the Cargo project lives here
@@ -293,8 +279,6 @@ of the study root — one directory above the issue:
   804/
     CONTEXT.md   AGENTS.md   00_build_datasets.py
     01_flat_search.py        01_flat_search.rs      <- one probe, both languages
-  8245/
-    CONTEXT.md   AGENTS.md   01_stringview.rs
 ```
 
 ```toml
@@ -313,26 +297,15 @@ name = "804_flat_search"
 path = "804/01_flat_search.rs"
 ```
 
-Per-issue would mean a separate `target/`, so the project's whole dependency graph gets
-rebuilt for every issue you study — for a workspace the size of Lance that is hundreds of
-crates and minutes each time. Sharing one project builds them once.
+If that `Cargo.toml` already exists, **add a `[[bin]]`** rather than creating another.
+Name it `<issue>_<file>` so issues cannot collide, and give the run command as `cargo run
+--bin 804_flat_search` from the directory holding the manifest.
 
-So: if `Cargo.toml` already exists one level up, **add a `[[bin]]` to it** rather than
-creating another. Name the binary `<issue>_<file>` so two issues cannot collide, and give
-the run command in the docstring as
-`cargo run --bin 804_flat_search` from the directory holding `Cargo.toml`.
+You write the manifest; you do not build it. Say in the docstring that the reader's first
+build is slow — it compiles the project's whole dependency graph — and that the file is
+uncompiled, so a first error is expected rather than alarming.
 
-The contributor gets a real binary compiled against their own working tree — so once they
-make the change, re-running the probe shows the `AFTER` block coming true. That is a
-working acceptance check that never touches the project's source.
-
-You write that `Cargo.toml` and the `[[bin]]` entry; you do not build them. Say in the
-docstring that the reader's first build is slow — it is compiling the project's whole
-dependency graph — so a long compile is not read as a hang, and say that the file is
-uncompiled so a first error is expected rather than alarming.
-Do not reach for `cargo -Zscript`: it is nightly-only. If what you need to observe is not
-reachable from outside the crate, that is a signal the example belongs in the observation
-language instead, not that you should reach into internals.
+Do not reach for `cargo -Zscript`: it is nightly-only.
 
 #### Getting an environment
 
@@ -383,16 +356,14 @@ reads as test scaffolding when these are files the reader runs and watches.
 
 ### Tutorial level
 
-`CONTEXT.md` records the level the study was generated at. It applies to every file, and
-defaults to `partial`. Since nobody has executed these, `none` would promise complete
-working code on no evidence, and that promise is what the reader would act on. Write the
-scaffolding you can stand behind from reading; leave the rest as stubs.
+`CONTEXT.md` records the level, and it applies to every file. It defaults to `partial`,
+because nothing here is executed and `full` would promise working code on no evidence.
 
 | level | the file contains |
 |---|---|
-| `full` | comments and `TODO`s. The reader writes every line. |
+| `full` | complete code, written to run — but never executed, so the claim rests on reading. |
 | `partial` | scaffolding, with the parts worth thinking about left as stubs. |
-| `none` | complete code, written to run — but still never executed, so the claim rests on reading alone. |
+| `none` | comments and `TODO`s. The reader writes every line. |
 
 Mark a stub the way the language does, and say what goes there — never leave a silent
 gap:
