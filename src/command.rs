@@ -57,6 +57,13 @@ how small your example is. So:
 - **Do not build a trained index, a large generated dataset, or anything else the project
   would call a benchmark.**
 
+Those limits are on what *you* execute, not on what you write. The reader typed the
+command, so the file may build indexes, write two sizes of data and time queries if that is
+what the issue is about. And make it probe the issue's actual question: if the issue asks
+when something is slow enough to warrant a warning, showing that the slow branch is taken
+without ever timing it has skipped the question. Adjacent behaviours you find while reading
+belong in the study's prose, not in a file each.
+
 Nothing is compiled either. Building a Rust example against a large workspace means
 compiling its whole dependency graph first, which for a project pulling in Arrow and
 DataFusion is around nine hundred crates before the compiler reaches your file.
