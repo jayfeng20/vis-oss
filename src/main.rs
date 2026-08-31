@@ -50,40 +50,56 @@ struct Cli {
     #[arg(value_name = "STUDY_ROOT")]
     base: Option<PathBuf>,
     /// The repository the issue lives in. Inferred from the git remotes when omitted.
-    #[arg(long, value_name = "OWNER/NAME")]
+    #[arg(long, value_name = "OWNER/NAME", help_heading = STUDY)]
     repo: Option<String>,
     /// Checkout to study. Defaults to the enclosing repository.
-    #[arg(long, value_name = "REPO_PATH")]
+    #[arg(long, value_name = "REPO_PATH", help_heading = STUDY)]
     source: Option<PathBuf>,
     /// How much of the example is written for you.
     ///
     /// Defaults to `partial`: nothing here is executed, so `full` would promise complete
     /// working code nobody has run. Scaffolding the agent stands behind from reading, with
     /// the interesting parts left to you, is what it can honestly deliver.
-    #[arg(long, value_enum, value_name = "LEVEL", default_value = "partial")]
+    #[arg(long, value_enum, value_name = "LEVEL", default_value = "partial", help_heading = STUDY)]
     tutorial: Tutorial,
-    /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
-    #[arg(long)]
-    install_command: bool,
-    /// Reinstall the latest vis-oss and refresh the agent command, then exit.
-    #[arg(long)]
-    update: bool,
-    /// Remember where studies are filed, for every later run, then exit.
-    #[arg(long, value_name = "PATH")]
-    set_root: Option<PathBuf>,
+    /// Steer the agent: prior art to look at, an angle to take. Repeatable.
+    #[arg(long, value_name = "TEXT", help_heading = STUDY)]
+    note: Vec<String>,
+    /// Delete an existing study and write a fresh skeleton. The old one is not kept.
+    #[arg(long, help_heading = STUDY)]
+    redo: bool,
     /// Fast-forward the checkout onto the canonical remote.
     ///
     /// With an issue number, it runs before the study is written. On its own, it syncs
     /// and exits.
-    #[arg(long)]
+    #[arg(long, help_heading = STUDY)]
     sync_upstream: bool,
-    /// Steer the agent: prior art to look at, an angle to take. Repeatable.
-    #[arg(long, value_name = "TEXT")]
-    note: Vec<String>,
-    /// Delete an existing study and write a fresh skeleton. The old one is not kept.
-    #[arg(long)]
-    redo: bool,
+    /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
+    #[arg(long, group = "setup", conflicts_with_all = STUDY_ARGS, help_heading = SETUP)]
+    install_command: bool,
+    /// Reinstall the latest vis-oss and refresh the agent command, then exit.
+    #[arg(long, group = "setup", conflicts_with_all = STUDY_ARGS, help_heading = SETUP)]
+    update: bool,
+    /// Remember where studies are filed, for every later run, then exit.
+    #[arg(long, value_name = "PATH", group = "setup", conflicts_with_all = STUDY_ARGS, help_heading = SETUP)]
+    set_root: Option<PathBuf>,
 }
+
+/// The two halves of the CLI: flags that ride along with an issue number, and flags that
+/// run alone. A setup flag next to a study is a contradiction clap rejects up front,
+/// rather than one mode silently winning.
+const STUDY: &str = "Creating a study (usually typed after /vis-oss in your agent)";
+const SETUP: &str = "Setup (each runs alone, then exits)";
+const STUDY_ARGS: [&str; 8] = [
+    "number",
+    "base",
+    "repo",
+    "source",
+    "tutorial",
+    "note",
+    "redo",
+    "sync_upstream",
+];
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -267,4 +283,64 @@ fn confirm_stale(stale: &Staleness, source: &Path) -> Result<bool> {
     }
     eprintln!("stopped. Sync, then run vis-oss again.");
     Ok(false)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    #[test]
+    fn cli_definition_is_consistent() {
+        Cli::command().debug_assert();
+    }
+
+    #[test]
+    fn setup_flags_run_alone() {
+        assert!(Cli::try_parse_from(["vis-oss", "--update"]).is_ok());
+        assert!(Cli::try_parse_from(["vis-oss", "--install-command"]).is_ok());
+        assert!(Cli::try_parse_from(["vis-oss", "--set-root", "/tmp/studies"]).is_ok());
+        assert!(Cli::try_parse_from(["vis-oss", "--sync-upstream"]).is_ok());
+    }
+
+    #[test]
+    fn setup_flags_reject_a_study() {
+        // Without the conflict, --set-root would win and the study would silently
+        // never be created.
+        for study in [
+            ["804", ""],
+            ["--note", "a lead"],
+            ["--redo", ""],
+            ["--sync-upstream", ""],
+            ["--tutorial", "full"],
+        ] {
+            let args = std::iter::once("vis-oss")
+                .chain(["--set-root", "/tmp/studies"])
+                .chain(study.into_iter().filter(|a| !a.is_empty()));
+            assert!(Cli::try_parse_from(args).is_err(), "{study:?} was accepted");
+        }
+        assert!(Cli::try_parse_from(["vis-oss", "--update", "--install-command"]).is_err());
+        assert!(Cli::try_parse_from(["vis-oss", "804", "--update"]).is_err());
+    }
+
+    #[test]
+    fn study_flags_travel_with_the_number() {
+        let cli = Cli::try_parse_from([
+            "vis-oss",
+            "804",
+            "/tmp/notes",
+            "--tutorial",
+            "none",
+            "--note",
+            "a lead",
+            "--redo",
+            "--sync-upstream",
+        ])
+        .expect("a fully specified study must parse");
+        assert_eq!(cli.number, Some(804));
+        assert!(
+            Cli::try_parse_from(["vis-oss"]).is_err(),
+            "a bare call has nothing to do"
+        );
+    }
 }

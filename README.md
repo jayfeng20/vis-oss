@@ -155,18 +155,32 @@ prompt — if you are on another branch, the working tree is dirty, or your bran
 commits the remote does not. It will not merge, rebase, stash, or touch a branch other
 than the one you have checked out.
 
+### The flags
+
+Two groups, and they refuse to mix — a setup flag next to an issue number is an error,
+not a guess about which you meant.
+
+**Setup** — run yourself, in a terminal, rarely. Each does its one job and exits:
+
+| | |
+|---|---|
+| `--install-command` | (Re)install the `/vis-oss` command and exit |
+| `--set-root <path>` | Remember a root for every later run, and exit |
+| `--update` | Reinstall the latest vis-oss, refresh the agent command, and exit |
+
+**Creating a study** — everything else rides along with the issue number, and means the
+same whether you type it after `/vis-oss` in your agent or after `vis-oss` in a terminal
+(the slash command passes your arguments straight through):
+
 | | |
 |---|---|
 | `vis-oss 804 ~/notes` | Use a different root for one run. The `<repo-name>/<owner>/<issue>/` layout still applies, so this writes `~/notes/lance/lance-format/804/` |
-| `--set-root <path>` | Remember a root for every later run, and exit |
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
 | `--tutorial full\|partial\|none` | How much is written for you. `full` is complete code, `partial` (default) leaves the parts worth thinking about as exercises, `none` is `TODO`s |
 | `--note <text>` | A lead for the agent to verify. Repeatable |
 | `--redo` | Delete an existing study and start fresh. The old one is not kept |
-| `--sync-upstream` | Fast-forward the checkout onto the canonical remote. With an issue number it runs first; on its own, `vis-oss --sync-upstream` just syncs |
-| `--update` | Reinstall the latest vis-oss, refresh the agent command, and exit |
-| `--install-command` | (Re)install the `/vis-oss` command and exit |
+| `--sync-upstream` | Fast-forward the checkout onto the canonical remote before writing. On its own, `vis-oss --sync-upstream` just syncs and exits |
 
 ## License
 
