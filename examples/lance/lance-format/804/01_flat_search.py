@@ -5,7 +5,8 @@ nothing.
     cd ~/Coding/lance/python
     LANCE_LOG=warn uv run --frozen python <this file>
 
-Tutorial level: partial — median_ms is yours to write. Run 00_build_datasets.py first.
+Tutorial level: partial — median_ms is yours to write, and the ANN plan marker yours to
+predict. Run 00_build_datasets.py first.
 
 Not run, not compiled. APIs read against lance 324cedd9d:
 to_table at python/python/lance/dataset.py:1559, scanner at :1182, explain_plan at :640,
@@ -73,14 +74,23 @@ def median_ms(dataset: lance.LanceDataset, query: np.ndarray, *, use_index: bool
     )
 
 
+def TODO(hint: str):
+    raise NotImplementedError(hint)
+
+
+# Which substring marks the ANN path in a plan? A prediction to fill by reading, not
+# running: the operators are declared in rust/lance/src/io/exec/knn.rs, and the project's
+# own tests assert on the same string — rust/lance/src/dataset/scanner.rs:9363 for the
+# ANN path, :9872 for the flat one. The asserts in main() grade your answer.
+ANN_PLAN_MARKER = TODO("the operator name an ANN plan contains")
+
+
 def uses_ann(dataset: lance.LanceDataset, query: np.ndarray, *, use_index: bool) -> bool:
     """Read the plan rather than inferring the path from timings."""
     plan = dataset.scanner(
         nearest={"column": "vector", "q": query, "k": K, "use_index": use_index}
     ).explain_plan(verbose=True)
-    # The Rust tests assert on this same string: rust/lance/src/dataset/scanner.rs:9363
-    # for the ANN path, :9872 for the flat one.
-    return "ANNSubIndex" in plan
+    return ANN_PLAN_MARKER in plan
 
 
 def main() -> None:

@@ -137,9 +137,10 @@ pub fn context_md(c: &Context) -> String {
          \n\
          ## Exercises\n\
          \n\
-         <!-- One entry per stub: file and symbol, what goes there, what completing it\n\
-              teaches, and which walkthrough step supplies what is needed. \"None — <why>\"\n\
-              is a fine answer when there is nothing to run. -->\n\
+         <!-- One entry per stub — an instrument to write or a prediction to fill: file\n\
+              and symbol, what goes there, what completing it teaches, and which\n\
+              walkthrough step supplies what is needed. \"None — <why>\" is a fine answer\n\
+              when there is nothing to run. -->\n\
          \n\
          ## Open questions\n\
          \n\

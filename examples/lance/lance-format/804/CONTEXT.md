@@ -74,8 +74,9 @@ warning blindly.
 
 **3. Complete the probe, then watch the silence.** Open `01_flat_search.py`. It times
 one query four ways — small, large without index, large with index, large with the index
-refused via `use_index=False` — and its timing helper `median_ms` is Exercise 1: fill it
-in (the docstring says exactly what to write), then:
+refused via `use_index=False` — and two exercises gate it: write the timing helper
+`median_ms` (Exercise 1) and predict the ANN plan marker (Exercise 3). Each gap's
+message says exactly what goes there. Fill both, then:
 
 ```sh
 LANCE_LOG=warn uv run --frozen python <study>/01_flat_search.py
@@ -131,7 +132,8 @@ against your own working tree with no Python extension to rebuild, and re-runnin
 after a change is the acceptance check for the `AFTER` block. It is a `[[bin]]` in a
 Cargo project one level up, shared by every issue studied in this repository; that
 manifest is not checked in — its `lance` path dependency must point at your checkout —
-so write it from the template in `AGENTS.md` first. Its `median_ms` is Exercise 2.
+so write it from the template in `AGENTS.md` first. Its `median_ms` is Exercise 2, and
+it shares the plan-marker prediction (Exercise 3).
 
 ```sh
 cd <study root>/lance/lance-format
@@ -185,9 +187,9 @@ message anywhere else in `rust/` — that phrasing has exactly one hit in the tr
 
 ## Exercises
 
-Both probes share one stub, so there are two exercises, one per language. Each stub's
-docstring names the API to call and the shape of the result; steps 3–5 of the walkthrough
-supply everything else.
+Three, shared across the two probes: two instruments to write (one per language) and one
+prediction to fill. Each gap names the API to call and the shape of the result; steps
+3–5 of the walkthrough supply everything else.
 
 **Exercise 1 — `median_ms` in `01_flat_search.py`.** Time `REPEATS` runs of
 `to_table(nearest=...)` around `time.perf_counter()` and return the median in
@@ -199,6 +201,13 @@ page cache, and reporting that number is how imaginary regressions get filed.
 `Scanner::nearest` and `try_into_batch` directly. What it adds over Exercise 1 is the
 acceptance loop: once you can run this binary, a change to `KNNVectorDistanceExec` in
 your checkout is one `cargo run` away from a verdict, with nothing rebuilt in between.
+
+**Exercise 3 — the ANN plan marker, in both files (a prediction).** `uses_ann` needs the
+substring that marks the ANN path in an `explain_plan` output, and both files leave it
+blank. It can only be filled by reading: the operators are declared in
+`rust/lance/src/io/exec/knn.rs` (walkthrough step 5), and the project's own tests assert
+on the same string — `scanner.rs:9363` for the ANN path, `:9872` for the flat one. The
+three plan assertions in `main()` grade your answer on the first run.
 
 ## Open questions
 
@@ -225,8 +234,8 @@ the issue that the FTS warning may be less visible from Python than intended.
 No API changes. `to_table(nearest=...)` and `LanceDataset.nearest` keep their signatures;
 this is a behaviour change, visible only on stderr.
 
-Running `01_flat_search.py`, once its stub is filled, a sufficiently large unindexed
-query gains one line:
+Running `01_flat_search.py`, once its exercises are filled, a sufficiently large
+unindexed query gains one line:
 
 ```
 WARN lance::io::exec::knn: brute-force vector search scored 500000 rows on column

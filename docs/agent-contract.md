@@ -84,10 +84,11 @@ section, because it turns a design argument into a precedent. Search for the *ph
 of the feature, not only its nouns. At most two, closest first. If there is none, say so
 and say where you looked.
 
-**Exercises.** One entry per stub: the file and symbol, what goes there, what completing
-it teaches, and which walkthrough step supplies what the reader needs to write it. If
-nothing is stubbed — the level is `full`, or the issue has nothing to run — say so in
-one line, so it reads as decided.
+**Exercises.** One entry per stub — an instrument to write or a prediction to fill, see
+*Exercises and the tutorial level*: the file and symbol, what goes there, what completing
+it teaches, and which walkthrough step supplies what the reader needs. If nothing is
+stubbed — the level is `full`, or the issue has nothing to run — say so in one line, so
+it reads as decided.
 
 **Open questions.** Decisions the issue leaves open that the implementer cannot avoid.
 This section comes late because only a reader who has walked the path can argue back;
@@ -139,8 +140,10 @@ column during query". The finished study ships in the vis-oss repository under
 3. *Prior art.* Flat full-text search already warns past a byte threshold, latched with
    `AtomicBool::swap` to fire once — the project has already chosen threshold-over-blind
    once, which converts the issue's open design question into a precedent.
-4. *Exercise.* The timing helper is the stub: the quantity the issue argues about is the
-   one the reader measures themselves.
+4. *Exercises.* The timing helper is the instrument — the quantity the issue argues
+   about is the one the reader measures themselves. The operator each plan will name is
+   the prediction, answerable only by reading `knn.rs`, and graded by the probe's own
+   assertion on the first run.
 5. *After.* One WARN line, quoted exactly, once per query — and the small dataset stays
    silent, which is the entire difficulty. Rerunning the probe is the acceptance check.
 
@@ -164,8 +167,9 @@ always fails".*
    (`rust/lance-index/src/scalar/expression.rs:2081`), so fixing only one direction
    leaves the scalar index silently bypassed — correct rows, wrong plan. The probe
    prints the query plan for exactly this reason.
-4. *Exercise.* The plan assertion is the stub: telling `refine_filter=` from
-   `ScalarIndexQuery` in explain output is the skill the reader keeps.
+4. *Exercise.* The expected plan string is the prediction to fill: telling
+   `refine_filter=` from `ScalarIndexQuery` in explain output is the skill the reader
+   keeps.
 5. *After.* The unchanged probe passes and the plan names the index. Prior art is a past
    fix that added a type arm to the same match, found by searching the history, not the
    tree.
@@ -190,8 +194,9 @@ GET per 8 KiB".*
    which is one storage request. The probe counts requests instead of timing them
    because 257 is structural — the same on a laptop and in CI — where a duration is
    weather.
-3. *Exercise.* The counting wrapper is the stub: it is the measuring instrument, and a
-   reader who built the instrument trusts the number.
+3. *Exercise.* The counting wrapper is the instrument to write, and a reader who built
+   the instrument trusts the number. The read count itself is the prediction: what does
+   2 MiB divided into 8 KiB refills come to, and does the run agree?
 4. *After.* The same consumer loop, and the count falls from 257 to a handful. How large
    the buffer should be is the open question, not part of the assertion.
 
@@ -493,19 +498,29 @@ reading it, and `partial` is that principle applied to a probe.
 | `partial` | scaffolding complete; the parts worth thinking about are exercises, left as stubs. |
 | `none` | comments and `TODO`s. The reader writes every line, from your specification. |
 
-At `partial`, choosing what to stub is choosing what the lesson examines:
+At `partial`, choosing what to stub is choosing what the lesson examines. Exercises come
+in two shapes, and a probe usually carries one of each:
 
-- **Stub the load-bearing concept** — the quantity the issue argues about, the assertion
-  that distinguishes its cases: the timing helper in a study of slowness, the plan check
-  in a study of a bypassed index, the request counter in a study of amplification. Never
-  the plumbing — opening datasets, parsing paths — which you finish so the exercise is
-  reachable.
-- **Make it solvable from the study alone.** The stub's docstring names the API, the
-  file, and the shape of the result; the walkthrough has already taught the concept.
-  Withhold only the typing. If solving it needs something the study never taught, teach
-  it or do not stub it.
-- **One or two stubs per probe**, so the file is one short, visible-result task away from
-  running — a rewrite is not an exercise.
+- **Write the instrument** — a helper whose body *is* the concept the issue argues
+  about: the timing helper in a study of slowness, the request counter in a study of
+  amplification. The reader builds the thing that produces the number, and trusts the
+  number because they built it.
+- **Predict the observation** — a value the code already determines, left blank: the
+  operator a plan will name, the exact error text, the number of requests a loop will
+  issue. The reader can only fill it by reading — the hint says where the value is
+  *declared*, never what it is — and the probe's own assertion grades the prediction on
+  the first run. The cheapest exercise to fill, and often the one that teaches the code
+  path best, because it cannot be answered from the probe file itself.
+
+Never stub the plumbing — opening datasets, parsing paths — which you finish so the
+exercises are reachable. And keep both shapes honest:
+
+- **Solvable from the study alone.** The stub names the API, the file, and the shape of
+  the result; the walkthrough has already taught the concept. Withhold only the typing —
+  or, for a prediction, only the answer. If solving it needs something the study never
+  taught, teach it or do not stub it.
+- **A short task, not a rewrite.** One instrument and one or two predictions per probe
+  at most; the file stays minutes away from running.
 
 Mark a stub the way the language does, and say what goes there — never leave a silent
 gap:
@@ -520,6 +535,24 @@ fn median_query_ms(ds: &Dataset, q: &[f32]) -> f64 {
 def median_query_ms(ds, q):
     raise NotImplementedError("time three runs, return the median; the first pays for "
                               "page-cache warmup")
+```
+
+A prediction is marked the same way — a gap that fails loudly with its hint, never a
+silent placeholder the assertion would then blame on the code:
+
+```rust
+// Which operator does the flat path's plan name? Declared as a DisplayAs impl in
+// rust/lance/src/io/exec/knn.rs; the project's own tests assert on the same string.
+let expected_op: &str = todo!("the operator the unindexed plan names");
+```
+
+```python
+def TODO(hint: str):
+    raise NotImplementedError(hint)
+
+# Which operator does the flat path's plan name? Declared as a DisplayAs impl in
+# rust/lance/src/io/exec/knn.rs; the project's own tests assert on the same string.
+EXPECTED_FLAT_OP = TODO("the operator the unindexed plan names")
 ```
 
 Being vague is not the same as being a tutorial: "figure out how to time this" helps
