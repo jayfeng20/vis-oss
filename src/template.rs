@@ -29,8 +29,10 @@ impl Tutorial {
 
     fn describes(self) -> &'static str {
         match self {
-            Tutorial::Full => "complete and runnable as shipped",
-            Tutorial::Partial => "scaffolding is written; the interesting parts are stubs",
+            Tutorial::Full => "complete code, nothing left to write",
+            Tutorial::Partial => {
+                "scaffolding is written; the parts worth thinking about are exercises"
+            }
             Tutorial::None => "every line is yours to write, from `TODO`s",
         }
     }
@@ -54,8 +56,9 @@ pub struct Context<'a> {
 
 /// The skeleton of a study.
 ///
-/// Section order is the order a newcomer needs them in: what the problem is, then what
-/// the code does now, then where to look, then what to decide.
+/// Section order is the order a lesson runs in: what the problem is, then a walkthrough
+/// that observes it and traces it into the code, then the precedent, the exercises, the
+/// decisions, and last the target and the trust boundary.
 pub fn context_md(c: &Context) -> String {
     let labels = if c.labels.is_empty() {
         String::new()
@@ -100,7 +103,7 @@ pub fn context_md(c: &Context) -> String {
          {meta}{labels}\n\
          \n\
          > Studied against `{commit}` in `{source}`.  \n\
-         > Examples are at tutorial level **{mode}** — {mode_describes}. See `AGENTS.md`.\n\
+         > Probes are at tutorial level **{mode}** — {mode_describes}. See `AGENTS.md`.\n\
          \n\
          > **Written by an agent, and not reviewed.** It is a head start on understanding\n\
          > this issue, not an answer to it. Check any file reference before you rely on it,\n\
@@ -115,48 +118,48 @@ pub fn context_md(c: &Context) -> String {
          \n\
          ---\n\
          \n\
-         {notes}## What this actually is\n\
+         {notes}## What this is about\n\
          \n\
-         <!-- Plain language, for someone who has not read the issue. -->\n\
+         <!-- Plain language, for someone who has not read the issue. End with 2-4\n\
+              \"by the end you should be able to...\" goals — concrete abilities. -->\n\
          \n\
-         ## What happens today\n\
+         ## Walkthrough\n\
          \n\
-         <!-- The current behaviour, traced through real code. Name functions and files. -->\n\
-         \n\
-         ## Where the code is\n\
-         \n\
-         <!-- A reading order. `path/to/file.rs:123` then why a newcomer is looking at it. -->\n\
+         <!-- Numbered steps. Each is one action — a command to run or a file to open —\n\
+              then what the reader should observe and why the code does that, with\n\
+              file:line to the declarations. Step 1 is getting an environment.\n\
+              Observation before explanation; recap at the pivots. -->\n\
          \n\
          ## Prior art\n\
          \n\
          <!-- Code in this project that already solves a similar problem, or \"none found\"\n\
               and where you looked. Usually the most valuable section. -->\n\
          \n\
+         ## Exercises\n\
+         \n\
+         <!-- One entry per stub: file and symbol, what goes there, what completing it\n\
+              teaches, and which walkthrough step supplies what is needed. \"None — <why>\"\n\
+              is a fine answer when there is nothing to run. -->\n\
+         \n\
          ## Open questions\n\
          \n\
-         <!-- What the issue leaves undecided, what turns on each answer, and your\n\
-              recommendation. Empty is a fine answer if the issue is unambiguous. -->\n\
-         \n\
-         ## Examples\n\
-         \n\
-         <!-- What is in examples/, and the exact command to run each. -->\n\
-         \n\
-         ## How to verify\n\
-         \n\
-         <!-- Build, test and lint commands, from the project's own docs. -->\n\
-         \n\
-         ## What I could not verify\n\
-         \n\
-         <!-- Claims above that rest on inference rather than something you read, code you\n\
-              could not find, and questions to put to the maintainers. An empty section is a\n\
-              claim that everything above is solid. -->\n\
+         <!-- What the issue leaves undecided, now that the reader knows enough to argue:\n\
+              what turns on each answer, and your recommendation with its reason. Empty\n\
+              is a fine answer if the issue is unambiguous. -->\n\
          \n\
          ## After — what the issue asks for\n\
          \n\
          <!-- What is different once this is fixed, seen from outside: an API that changes\n\
               shape, or the same calls behaving differently — a warning appears, a write\n\
-              gets faster. Use the same file:line annotations as the examples. Describe\n\
-              the target; do not write the patch. -->\n",
+              gets faster. Use the same file:line annotations as the probes. End with how\n\
+              a fix would be checked: the probe to rerun, and the project's own build,\n\
+              test and lint commands. Describe the target; do not write the patch. -->\n\
+         \n\
+         ## What I could not verify\n\
+         \n\
+         <!-- Claims above that rest on inference rather than something you read, code you\n\
+              could not find, and questions to put to the maintainers. An empty section is a\n\
+              claim that everything above is solid. -->\n",
         repo = c.repo,
         number = c.number,
         title = c.title,

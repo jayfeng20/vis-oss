@@ -3,21 +3,28 @@
 This is the spec for creating a vis-oss study. `vis-oss <issue>` creates the directory
 and copies this file into it as `AGENTS.md`; everything after that is your job.
 
-A study exists so that someone who is unfamiliar with the codebase can understand one issue in
-it well enough to start contributing. The study is like a textbook that educates the reader on
-the necessary contexts around the issue with code or comments depending on tutorial level set
-by reader.
+A study is a **lesson about one issue**, written for someone unfamiliar with the
+codebase, so they understand it well enough to start contributing. Its shape is the
+shape of a textbook chapter: the reader starts from the problem, watches it happen,
+follows it into the code one step at a time, writes a little of the code themselves —
+how much is the tutorial level, the reader's to set — and finishes knowing enough to
+hold their own opinion about the fix. It is a head start, not an answer. You will get
+things wrong, especially on a complex issue, and the reader cannot cheaply tell which
+parts. So the standard is not "sound authoritative" — it is **be checkable**: cite what
+you read, and mark plainly what you inferred.
 
 ## What you are filling in
 
 ```
-CONTEXT.md     the study — sections below, all of them
+CONTEXT.md     the prose — the lesson itself, sections below, all of them
 AGENTS.md      this file
-00_*, 01_*     the examples, alongside the prose
+00_*, 01_*     the probes — small runnable files the walkthrough tells the reader to run
 ```
 
-Examples sit at the top level of the study. They are few and numbered, so a directory for
-them would be one level to open for nothing. A language that needs a project to run at
+A **probe** is a numbered script that demonstrates what the code does today — `00_` sets
+state up, `01_` onward ask the issue's questions; *The probes* below is the full spec.
+They sit at the top level of the study, next to the prose: they are few and numbered, so
+a directory for them would be one level to open for nothing. A language that needs a project to run at
 all — Rust — puts that project one level *up*, shared by every issue in the same
 repository; see *Making them runnable*.
 
@@ -25,51 +32,90 @@ repository; see *Making them runnable*.
 Fill in every section. If a section genuinely does not apply, say so in one line and
 say why — an empty heading reads as unfinished work, not as a considered "none".
 
+## Write a lesson, not a report
+
+The failure mode of documents like this is the reference dump: accurate sections that
+each summarise something, none of which teaches. The books working programmers actually
+learn from — *The Rust Programming Language*, *Crafting Interpreters* — avoid it with a
+small set of habits, all mechanical enough to demand:
+
+- **Observation before explanation.** Show the behaviour first — a command and its
+  output — and only then open the code that produced it. A reader who has just watched
+  four timings print wants to know which branch chose the slow one; a reader handed the
+  branch first has nothing to attach it to.
+- **One idea per step, and every step ends with something the reader can see** — output
+  on their terminal, or a named line of code on their screen. A step whose result cannot
+  be seen cannot be checked, and this whole document runs on being checkable.
+- **Never open a file the reader has not been given a reason to open.** The reason is
+  whatever they observed in the step before.
+- **Show the expected output, hedged as a draft.** "You should see roughly this" is a
+  checkpoint: the reader knows they are still on the path, or knows exactly where they
+  left it. Since nothing here is executed, say the output is what a reading of the code
+  predicts, not what a run produced.
+- **Recap at the pivots.** One sentence at each turn — "you have now seen the slow path
+  and who chooses it; what remains is where a warning could live" — is the difference
+  between a guided walk and a corridor of facts.
+- **The reader writes some of the code.** Understanding you typed outlasts understanding
+  you read; that is why `partial` is the default level, and why the stubs are called
+  exercises. See *Exercises and the tutorial level*.
+
 ## The sections
 
-**What this actually is.** The problem in plain language, for someone who has not read the
-issue — an explanation, not a summary. If the issue assumes context, supply it here.
+**What this is about.** The problem in plain language, for someone who has not read the
+issue — an explanation, not a summary. If the issue assumes context, supply it here. End
+with two to four *by the end you should be able to…* goals. Goals are promises the
+walkthrough must keep, so state them as concrete abilities — "say which plan an
+unindexed query takes and where it is chosen", not "understand indexing".
 
-**What happens today.** The current behaviour, traced through real code, naming the
-functions and files that produce it. Concrete enough to reproduce.
-
-**Where the code is.** A reading order, not a file listing: three to six `path/file.rs:123`
-locations, each with why a newcomer is looking at it. Trace the execution path rather than
-guessing from file names. Read every line you cite and omit what you could not verify — a
-confident wrong pointer is worse than none.
+**Walkthrough.** The spine of the study: numbered steps, each one action — a command to
+run or a file to open — followed by what the reader should observe and why the code
+behaves that way, with `path/file.rs:123` pointing at the declarations responsible. Step
+1 is always getting an environment, from the project's own docs. Run steps introduce
+each probe at the moment it is needed; read steps trace what was just observed into the
+code. Order the steps so understanding accumulates: the behaviour, then the branch that
+chose it, then the code that does the work, then the place a fix would touch. Read every
+line you cite — a confident wrong pointer is worse than none. For an issue with nothing
+to run, the steps alternate between a claim and the code that confirms or contradicts
+it; the discipline is the same.
 
 **Prior art.** Code in this project that already solves a structurally similar problem —
-another index type, another backend, a sibling subsystem. Usually the most valuable section,
-because it turns a design argument into a precedent. Search for the *phrasing* of the
-feature, not only its nouns. At most two, closest first. If there is none, say so and say
-where you looked.
+another index type, another backend, a sibling subsystem. Usually the most valuable
+section, because it turns a design argument into a precedent. Search for the *phrasing*
+of the feature, not only its nouns. At most two, closest first. If there is none, say so
+and say where you looked.
 
-**Open questions.** Decisions the issue leaves open that the implementer cannot avoid. Each
-needs what turns on the answer and your recommendation, given as a reading with its reason
-so it can be argued with. *"What should the threshold be?"* is not one. *"Time or bytes?
-Time is what users feel but makes the test flaky; the sibling feature chose bytes"* is. Do
-not manufacture them.
+**Exercises.** One entry per stub: the file and symbol, what goes there, what completing
+it teaches, and which walkthrough step supplies what the reader needs to write it. If
+nothing is stubbed — the level is `full`, or the issue has nothing to run — say so in
+one line, so it reads as decided.
 
-**Examples.** What each file demonstrates, and the exact command to run it.
+**Open questions.** Decisions the issue leaves open that the implementer cannot avoid.
+This section comes late because only a reader who has walked the path can argue back;
+write each question so they can. Each needs what turns on the answer and your
+recommendation, given as a reading with its reason. *"What should the threshold be?"* is
+not one. *"Time or bytes? Time is what users feel but makes the test flaky; the sibling
+feature chose bytes"* is. Do not manufacture them.
 
-**How to verify.** Build, test and lint commands for the surfaces this touches, from the
-project's own docs.
+**After — what the issue asks for.** The only section describing code that does not
+exist. What differs once this is fixed, seen from outside, with the same `file:line`
+annotations as the probes. Precise enough to test: not "a warning is shown" but "one
+warning per query naming the column, and none for a small dataset or an indexed query".
+End with how a fix would be checked: which probe to rerun as the acceptance test, and
+the project's own build, test and lint commands, from its docs. Your reading, not a
+decision — the maintainers own the real shape.
 
 **What I could not verify.** Claims above resting on inference rather than something you
 read, code you looked for and could not find, and questions for the maintainers. This is
-what makes the rest safe to trust, because it bounds it. Leave it empty only when that is
-honestly true.
-
-**After — what the issue asks for.** Last, because it is the only section describing code
-that does not exist. What differs once this is fixed, seen from outside, with the same
-`file:line` annotations as the examples. Precise enough to test: not "a warning is shown"
-but "one warning per query naming the column, and none for a small dataset or an indexed
-query". Your reading, not a decision — the maintainers own the real shape.
+what makes the rest safe to trust, because it bounds it. Leave it empty only when that
+is honestly true.
 
 ## Shapes of issue
 
-Most issues are one of four kinds, and the kind decides what the study must show. Work out
-which you have before writing anything — the tracker's own labels usually say.
+Most issues are one of four kinds, and the kind decides what the lesson must show. Work
+out which you have before writing anything — the tracker's own labels usually say. Each
+shape below ends with a worked skeleton from a real lance issue; the `file:line`
+references in them were verified by reading lance at `4a54e5dde`, except where marked as
+the issue's own report.
 
 **Feature request** — it does not exist yet. Show three things: *before*, the current
 behaviour with the feature absent, run and measured; *prior art*, at most two places in
@@ -77,27 +123,109 @@ this project that already solved a structurally similar problem, closest first; 
 *after*, described only. There is no probe for the target behaviour, because the code
 producing it does not exist.
 
-**Bug** — something is wrong. The study is a reproduction: the setup and the call that
+*Worked skeleton — lance #804, "display warning if the index is not built for a vector
+column during query". The finished study ships in the vis-oss repository under
+`examples/lance/lance-format/804/`.*
+
+1. *Observe.* Setup writes three datasets — 2k rows, 20k rows, 20k rows plus an IVF_PQ
+   index — because the issue's own caveat ("annoying for smaller datasets") makes the
+   small, must-stay-silent case as load-bearing as the slow one. The probe times one
+   query four ways, prints which plan each took, and shows stderr staying empty: the
+   complaint, reproduced on the reader's own terminal.
+2. *Explain.* Open `Scanner::vector_search` — it loads the indices, finds none covering
+   the column, and takes the flat branch; then `KNNVectorDistanceExec::execute`, where
+   the O(rows × dims) work happens and where anything that counts work would have to
+   live.
+3. *Prior art.* Flat full-text search already warns past a byte threshold, latched with
+   `AtomicBool::swap` to fire once — the project has already chosen threshold-over-blind
+   once, which converts the issue's open design question into a precedent.
+4. *Exercise.* The timing helper is the stub: the quantity the issue argues about is the
+   one the reader measures themselves.
+5. *After.* One WARN line, quoted exactly, once per query — and the small dataset stays
+   silent, which is the entire difficulty. Rerunning the probe is the acceptance check.
+
+**Bug** — something is wrong. The probe is a reproduction: the setup and the call that
 produce the wrong result, and an assertion of what is wrong. At `full` that file fails
-today and passes once the bug is fixed, which makes it the acceptance check. A similar past
-fix in the history is worth more here than a similar feature.
+today and passes once the bug is fixed, which makes it the acceptance check. A similar
+past *fix* in the history is worth more here than a similar feature.
 
-**Performance** — something is too slow. As for a feature request, except the measurement
-is the deliverable rather than the framing: time the slow path, time whatever the project
-already offers that is faster, at sizes far enough apart to show the trend.
+*Worked skeleton — lance #8846, "filtering a Float16 column with a numeric literal
+always fails".*
 
-**Documentation** — something is unexplained or wrong on the page. Often there is nothing
-to run; say so in *Examples* rather than inventing a probe, and spend the study on where
-the documented behaviour actually lives, so the page can be checked against the code.
+1. *Observe.* The probe writes a three-row `Float16` dataset and filters `value < 0.0`;
+   the expected output is the exact error, quoted. A `Float32` column passing the same
+   predicate sits in the same file, because "the neighbouring type works" is a
+   distinction the issue itself draws.
+2. *Explain.* `safe_coerce_scalar` (`rust/lance-datafusion/src/expr.rs:19`) has
+   `Float32` and `Float64` arms and no `Float16` in either direction;
+   `rust/lance-datafusion/src/logical_expr.rs:24` turns the resulting `None` into the
+   error just observed.
+3. *The part that hides.* The index path calls the same helper, in `maybe_scalar`
+   (`rust/lance-index/src/scalar/expression.rs:2081`), so fixing only one direction
+   leaves the scalar index silently bypassed — correct rows, wrong plan. The probe
+   prints the query plan for exactly this reason.
+4. *Exercise.* The plan assertion is the stub: telling `refine_filter=` from
+   `ScalarIndexQuery` in explain output is the skill the reader keeps.
+5. *After.* The unchanged probe passes and the plan names the index. Prior art is a past
+   fix that added a type arm to the same match, found by searching the history, not the
+   tree.
+
+**Performance** — something is too slow. As for a feature request, except the
+measurement is the deliverable rather than the framing: measure the slow path, measure
+whatever the project already offers that is faster, at sizes far enough apart to show
+the trend. Prefer a structural quantity — a request count, a byte total, rows scanned —
+over wall time wherever the issue allows: a count is the same on every machine, and
+milliseconds are not.
+
+*Worked skeleton — lance #8831, "BlobFile file-protocol consumers issue one object-store
+GET per 8 KiB".*
+
+1. *Observe.* The probe writes one 2 MiB blob, wraps the returned `BlobFile` in a
+   ten-line counting reader, and reads it the way `zipfile` would — 8 KiB at a time.
+   Expected output: 257 reads. The same loop through `io.BufferedReader`: one. The
+   faster thing the project already offers *is* the comparison, and one blob shows the
+   trend — no second dataset needed.
+2. *Explain.* `BlobFile` (`python/python/lance/blob.py:333`) subclasses `io.RawIOBase`,
+   which is unbuffered by contract: every `read(n)` is exactly one `readinto` (`:386`),
+   which is one storage request. The probe counts requests instead of timing them
+   because 257 is structural — the same on a laptop and in CI — where a duration is
+   weather.
+3. *Exercise.* The counting wrapper is the stub: it is the measuring instrument, and a
+   reader who built the instrument trusts the number.
+4. *After.* The same consumer loop, and the count falls from 257 to a handful. How large
+   the buffer should be is the open question, not part of the assertion.
+
+**Documentation** — something is unexplained or wrong on the page. Often there is
+nothing to run; say so in *Exercises* rather than inventing a probe, and spend the
+walkthrough alternating between what the page claims and where the claimed behaviour
+actually lives, one claim per step, so the page can be checked against the code.
+
+*Worked skeleton — lance #8851, "stable row id spec describes migration and
+inline/external storage inaccurately".*
+
+1. *Claim one.* The spec says stable row ids "cannot be turned on later"
+   (`docs/src/format/table/row_id_lineage.md:76`); the issue reports a shipped
+   `Dataset::migrate_to_stable_row_ids` whose error messages direct users to it. One
+   step, both sides cited, a verdict per claim.
+2. *Claim two.* The proto comments promise sequences over 200KB move to external files
+   (`protos/table.proto:339`); a search shows `RowIdMeta::External` is matched in
+   several places and constructed in none, and reading one is
+   `todo!("External file loading not yet implemented")`
+   (`rust/lance-table/src/rowids/version.rs:282`). The threshold is specification
+   fiction, and the study's job is to make that checkable.
+3. *After.* States what the corrected page must say — migration exists and under what
+   constraints; `External` is a planned encoding no writer emits — not the corrected
+   prose itself, which would be the fix.
 
 An issue can be two of these. Pick the one the reporter is asking for: #804 asks for a
 warning that does not exist, so it is a feature request, even though what it warns about
 is a performance problem.
 
-## The examples are the deliverable
+## The probes
 
-Everything else in `CONTEXT.md` frames them. An example is a **runnable probe of what the
-code does today**, annotated so that reading it teaches the code path, not just the API.
+The walkthrough is the spine; the probes are where it touches ground. A study without
+runnable probes is a blog post. A probe is a **runnable check of what the code does
+today**, annotated so that reading it teaches the code path, not just the API.
 
 Write each probe **twice, from two vantage points**:
 
@@ -117,7 +245,8 @@ core does not. If you cannot reach it from there, you have misread where it live
 the entry point the binding itself calls rather than reaching into internals.
 
 When both are the same language — a binding-layer bug, or a project with no bindings —
-there is one file. Say so in one line in *Examples*, so it reads as decided.
+there is one file. Say so in one line in the walkthrough step that runs it, so it reads
+as decided.
 
 Both share a number, separated by extension: `01_flat_search.py` and `01_flat_search.rs`
 are one probe from two sides. One setup file serves both, in whichever language is cheaper
@@ -127,23 +256,23 @@ for the reader to run.
 
 **Nothing here is run, and nothing is compiled.** A first execution costs whatever the
 project charges to build — for a Rust workspace, its whole dependency graph — which has
-nothing to do with how small your example is, and is work the reader does anyway on their
+nothing to do with how small your probe is, and is work the reader does anyway on their
 own tree.
 
 So the check is reading: open the file, find the symbol, confirm the signature, and name
 the paths you read in the provenance line.
 
-Say there that the file is a draft. An uncompiled Rust example will sometimes not compile,
+Say there that the file is a draft. An uncompiled Rust probe will sometimes not compile,
 and the reader's first `cargo check` is where that surfaces — a minute if they were told,
 an afternoon of doubt if they were not.
 
-Do not go further: no running an example to see whether it works, no throwaway scripts
+Do not go further: no running a probe to see whether it works, no throwaway scripts
 hunting for a size or a parameter that makes a measurement come out, nothing the project
 would call a benchmark.
 
 **Those limits are on what you execute, not on what you write.** The reader typed the
 command, so their file may build indexes, write a large dataset and time queries when the
-issue calls for it. Reading "do not train an index" as "the example must not train one"
+issue calls for it. Reading "do not train an index" as "the probe must not train one"
 turns a budget for you into a hole in the deliverable.
 
 Size still matters, because someone else pays for it: write the **smallest input that
@@ -169,31 +298,25 @@ is mechanical enough to do deliberately rather than by feel:
    byte total — that quantity is the probe's output.
 4. **Stop there.** Everything else you learned belongs in the prose.
 
-Worked, on the issue these examples come from:
-
-> *"show warnings if the index was not built for the column"* — index present or absent is
-> one axis.
-> *"doing so blindly makes it really annoying for smaller datasets that really don't need
-> an ANN index"* — small or large is the second.
-> *"if the runtime exceed a certain threshold to print the warning"* — runtime is what to
-> measure.
-
-Two axes crossed is four cases — small indexed, small flat, large indexed, large flat —
-each timed, printed as four rows of one table. In one place the reader sees both the case
-that ought to warn and the case that must stay silent, and that pair is the entire
-difficulty the issue is about. Note what follows: the probe builds indexes and writes a
-genuinely large dataset, because the axes demand it. Sizes are chosen so the difference is
-visible, not so the file is cheap — the reader is the one running it.
+The #804 skeleton above is this method run on that issue's three clauses: "show warnings
+if the index was not built" makes index present-or-absent one axis, "annoying for smaller
+datasets" makes small-or-large the second, "if the runtime exceed a certain threshold"
+makes runtime the measurement. Two axes crossed is four cases — four timed rows of one
+table, in which the reader sees both the case that ought to warn and the case that must
+stay silent. That pair is the entire difficulty the issue is about. Note what follows:
+the probe builds an index and writes a genuinely large dataset, because the axes demand
+it. Sizes are chosen so the difference is visible, not so the file is cheap — the reader
+is the one running it.
 
 What does not belong: that the same query also takes the flat path when the requested
-metric mismatches. True, found while reading, and worth one sentence in *What happens
-today*. Not a second probe — that turns one question into three and leaves the reader
-working out which one the issue was.
+metric mismatches. True, found while reading, and worth one sentence in the walkthrough.
+Not a second probe — that turns one question into three and leaves the reader working out
+which one the issue was.
 
 The reverse holds too. If the issue is about a wrong result, do not time anything; timing
 would be the tour. Match the probe to the claim being made.
 
-An example that needs a hundred lines of harness before it reaches the project's API is
+A probe that needs a hundred lines of harness before it reaches the project's API is
 teaching the harness. If capturing output or driving the API honestly takes that much,
 that is worth a sentence in *What I could not verify* — the next contributor will hit it
 too.
@@ -210,13 +333,13 @@ every file must be recognisably one of these, numbered in the order it is run.
 
 Check `test_data/`, `benchmarks/` and any datagen scripts before writing setup: reusing
 what the maintainers already ship makes your numbers comparable to theirs, and costs you
-nothing to build. Split probes when the behaviours differ — a slow read and a wrong result are two files; timing and plan
-inspection of one query are one file.
+nothing to build. Split probes when the behaviours differ — a slow read and a wrong
+result are two files; timing and plan inspection of one query are one file.
 
 **There is no file for the target behaviour.** It cannot run, because the code producing
-it does not exist. A file like `02_proposed.py` is a patch wearing an example's clothes,
+it does not exist. A file like `02_proposed.py` is a patch wearing a probe's clothes,
 and writing it is writing the fix. What changes belongs in the `AFTER` block of the probe
-it affects, and in full in the study's last section.
+it affects, and in full in the study's *After* section.
 
 ### What every file contains
 
@@ -251,16 +374,16 @@ the timings are whatever your machine does.
 ```
 
 Real paths, not a claim that you were careful: "APIs verified" is worth nothing to a
-reader who cannot see what you opened. Never leave provenance out — an example without one
+reader who cannot see what you opened. Never leave provenance out — a probe without one
 is indistinguishable from one written from memory.
 
 **If you assert, assert what is structural.** Assertions are not required — nobody has
 run them, and a file that teaches the code path has done its job. But one that is there
 runs on a machine you have never seen, so it must hold on any of them. Which plan is
-chosen, which operator appears in it, whether a warning reached stderr: those hold.
-Durations, ratios and recall move with the hardware and the row count, so print them and
-let the reader judge. `assert flat_ms > indexed_ms * 10` is not a check, it is a flake
-posted to a stranger.
+chosen, which operator appears in it, whether a warning reached stderr, how many requests
+were issued: those hold. Durations, ratios and recall move with the hardware and the row
+count, so print them and let the reader judge. `assert flat_ms > indexed_ms * 10` is not
+a check, it is a flake posted to a stranger.
 
 ### Making them runnable
 
@@ -309,8 +432,9 @@ Do not reach for `cargo -Zscript`: it is nightly-only.
 #### Getting an environment
 
 A run command only works inside an environment, and the reader does not have one yet. So
-the lowest-numbered file **in each language** opens with what it takes to get there — once,
-at the top, not repeated in every file.
+step 1 of the walkthrough is getting one, and the lowest-numbered file **in each
+language** opens with the same instructions — once, at the top, not repeated in every
+file.
 
 Take it from the project's own docs. The answer differs per project, and guessing it wrong
 strands the reader on step one:
@@ -350,19 +474,38 @@ so the reference survives the file moving.
 
 These are teaching material, not production code: skip the defensive error handling and
 the configurability, and spend the space on the annotations instead. Follow the project's
-own conventions, and avoid words it does not use — `corpus` is an NLP term a study of an IO bug cannot reuse, and `fixture`
-reads as test scaffolding when these are files the reader runs and watches.
+own conventions, and avoid words it does not use — `corpus` is an NLP term a study of an
+IO bug cannot reuse, and `fixture` reads as test scaffolding when these are files the
+reader runs and watches.
 
-### Tutorial level
+### Exercises and the tutorial level
 
 `CONTEXT.md` records the level, and it applies to every file. It defaults to `partial`,
-because nothing here is executed and `full` would promise working code on no evidence.
+for two reasons. The honest one: nothing here is executed, so `full` would promise
+working code on no evidence. The pedagogical one: a worked example is read once and
+nodded at, while a gap the reader fills is understanding they own — textbooks put
+exercises at the end of the chapter because completing something teaches more than
+reading it, and `partial` is that principle applied to a probe.
 
 | level | the file contains |
 |---|---|
-| `full` | complete code, written to run — but never executed, so the claim rests on reading. |
-| `partial` | scaffolding, with the parts worth thinking about left as stubs. |
-| `none` | comments and `TODO`s. The reader writes every line. |
+| `full` | complete code, written to run — a worked example for a reader who wants the artifact, not the lesson. Never executed, so the claim still rests on reading. |
+| `partial` | scaffolding complete; the parts worth thinking about are exercises, left as stubs. |
+| `none` | comments and `TODO`s. The reader writes every line, from your specification. |
+
+At `partial`, choosing what to stub is choosing what the lesson examines:
+
+- **Stub the load-bearing concept** — the quantity the issue argues about, the assertion
+  that distinguishes its cases: the timing helper in a study of slowness, the plan check
+  in a study of a bypassed index, the request counter in a study of amplification. Never
+  the plumbing — opening datasets, parsing paths — which you finish so the exercise is
+  reachable.
+- **Make it solvable from the study alone.** The stub's docstring names the API, the
+  file, and the shape of the result; the walkthrough has already taught the concept.
+  Withhold only the typing. If solving it needs something the study never taught, teach
+  it or do not stub it.
+- **One or two stubs per probe**, so the file is one short, visible-result task away from
+  running — a rewrite is not an exercise.
 
 Mark a stub the way the language does, and say what goes there — never leave a silent
 gap:
@@ -379,13 +522,8 @@ def median_query_ms(ds, q):
                               "page-cache warmup")
 ```
 
-Being vague is not the same as being a tutorial. "Figure out how to time this" helps
-nobody. Name the API, the file, and the shape of the assertion; withhold only the typing.
-
-At `partial`, finish everything that reaches the code path — the imports, the setup, the
-call itself, the annotations — and stub only what the reader gains from working out. The
-file should be one or two stubs away from running, so filling them is a short task with a
-visible result rather than a rewrite.
+Being vague is not the same as being a tutorial: "figure out how to time this" helps
+nobody.
 
 ### Every behaviour probe ends with an AFTER block
 

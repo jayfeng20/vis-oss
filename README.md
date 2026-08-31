@@ -76,7 +76,8 @@ lands next to the study, investigates the codebase, and writes the study. You ge
 
 ```
 ~/Coding/OSS-study/lance/lance-format/804/
-  CONTEXT.md          the study — what the issue is, where the code is, what to decide
+  CONTEXT.md          the study — a step-by-step lesson: what the issue is, a walkthrough
+                      into the code, exercises, what to decide
   AGENTS.md           the contract the agent followed
   00_*.py, 01_*.py    probes of today, each ending in what changes
   01_*.rs             the same probe in the language the fix lands in, where the API allows
@@ -88,9 +89,12 @@ project.
 [Here is a finished one](examples/lance/lance-format/804/CONTEXT.md), for
 [an open issue in lance](https://github.com/lance-format/lance/issues/804).
 
-The examples are the point: runnable probes of what the code does today, with comments
-naming the function or struct each call reaches and where it is declared, and an `AFTER`
-block saying what would differ once the issue is fixed. They never patch the project.
+A study reads like a textbook chapter about one issue. `CONTEXT.md` walks you step by
+step from the behaviour — run this, you should see that — into the code that produces
+it, so by the end you know enough to hold your own opinion about the fix. The probes are
+where the walkthrough touches ground: runnable files with comments naming the function
+or struct each call reaches and where it is declared, and an `AFTER` block saying what
+would differ once the issue is fixed. They never patch the project.
 
 Each probe comes twice: in the language the behaviour is *observed* in — what a user
 actually hits — and in the language it is *implemented* in, which runs against your own
@@ -101,7 +105,8 @@ whatever the project charges to build — for a Rust workspace, its entire depen
 and that is work you repeat anyway on your own tree. So expect the Rust one to need a fix or
 two on first `cargo check`; that is the trade for a study that arrives in minutes. Every
 file records which paths were read, at which commit, and says plainly that it is
-unexecuted. They also arrive one or two stubs short of running — see `--tutorial` — and if
+unexecuted. They also arrive one or two stubs short of running — the study's exercises,
+see `--tutorial` — and if
 executing something would settle a question, the agent offers rather than spending your
 afternoon on it.
 
@@ -156,7 +161,7 @@ than the one you have checked out.
 | `--set-root <path>` | Remember a root for every later run, and exit |
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
-| `--tutorial full\|partial\|none` | How much is written for you. `full` is complete code, `partial` (default) leaves the parts worth thinking about as stubs, `none` is `TODO`s |
+| `--tutorial full\|partial\|none` | How much is written for you. `full` is complete code, `partial` (default) leaves the parts worth thinking about as exercises, `none` is `TODO`s |
 | `--note <text>` | A lead for the agent to verify. Repeatable |
 | `--redo` | Delete an existing study and start fresh. The old one is not kept |
 | `--sync-upstream` | Fast-forward the checkout onto the canonical remote. With an issue number it runs first; on its own, `vis-oss --sync-upstream` just syncs |

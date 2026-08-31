@@ -25,11 +25,13 @@ const BODY: &str = r"Run `vis-oss $ARGUMENTS` from the repository you are in, th
 The command prints the directory it made. In it:
 
 - `AGENTS.md` is the contract. **Read it fully before writing anything** — it defines
-  what each section must contain, how examples are structured and annotated, and what
+  what each section must contain, how probes are structured and annotated, and what
   makes a study useful rather than merely complete. Follow it.
 - `CONTEXT.md` is the study, with its headings in place and the issue body pasted in.
-  Fill in every empty section.
-- The examples go alongside them, numbered: `00_` for setup if it is needed, then
+  Fill in every empty section. It reads as a lesson, not a report: the walkthrough takes
+  the reader step by step from the observed behaviour into the code that produces it,
+  and the stubs in the probes are its exercises.
+- The probes go alongside them, numbered: `00_` for setup if it is needed, then
   `01_`, `02_` for the behaviours worth watching.
 
 Write each probe twice: once in the language the behaviour is **observed** in, and once in
@@ -44,14 +46,14 @@ there is one file; say so in one line.
 Investigate from the repository you are in, not from the study directory — you need to
 search and read the project's source. Write into the study directory by absolute path.
 
-## Do not run the examples
+## Do not run the probes
 
 You write them; the reader runs them. Getting one to execute means first paying whatever
 the project charges for a first execution — a binding compiled from source, a dataset
 written before anything can be queried — and that cost is unpredictable and unrelated to
-how small your example is. So:
+how small your probe is. So:
 
-- **Do not run an example**, or a cut-down version of one, to check that it works.
+- **Do not run a probe**, or a cut-down version of one, to check that it works.
 - **Do not write throwaway scripts** hunting for a data size or parameter that makes a
   measurement come out the way you expected.
 - **Do not build a trained index, a large generated dataset, or anything else the project
@@ -87,7 +89,7 @@ you are making about how finished the file is, and it is the one you can keep.
 Work out first which shape of issue you have — feature request, bug, performance,
 documentation — because it decides what the study must show. `AGENTS.md` has the four.
 
-Give each example what it needs to be run by someone else: the exact command and directory,
+Give each probe what it needs to be run by someone else: the exact command and directory,
 the project's own tooling (`uv run`, `poetry run`), and for Rust the shared Cargo project
 one level above the issue directory, with a `[[bin]]` for your file. `AGENTS.md` has the
 layout. Write the smallest input that reaches the code path — a thousand rows takes the
