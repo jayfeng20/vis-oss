@@ -80,9 +80,12 @@ Say in that same line that the file is a draft — neither run nor compiled. It 
 compile first try, and that is expected; a reader who was told loses a minute, and one who
 assumed it built clean loses an afternoon wondering what they broke.
 
-What you owe instead is code that matches its tutorial level — complete at `none`, stubs
-and scaffolding at `partial` (the default), `TODO`s at `full`. That level is the promise
+What you owe instead is code that matches its tutorial level — complete at `full`, stubs
+and scaffolding at `partial` (the default), `TODO`s at `none`. That level is the promise
 you are making about how finished the file is, and it is the one you can keep.
+
+Work out first which shape of issue you have — feature request, bug, performance,
+documentation — because it decides what the study must show. `AGENTS.md` has the four.
 
 Give each example what it needs to be run by someone else: the exact command and directory,
 the project's own tooling (`uv run`, `poetry run`), and for Rust the shared Cargo project

@@ -156,7 +156,7 @@ than the one you have checked out.
 | `--set-root <path>` | Remember a root for every later run, and exit |
 | `--repo owner/name` | Override the inferred repository |
 | `--source <path>` | Study a checkout other than the enclosing one |
-| `--tutorial full\|partial\|none` | How much of the examples you write yourself. `partial` (default) leaves the parts worth thinking about as stubs, `none` is complete code, `full` is `TODO`s |
+| `--tutorial full\|partial\|none` | How much is written for you. `full` is complete code, `partial` (default) leaves the parts worth thinking about as stubs, `none` is `TODO`s |
 | `--note <text>` | A lead for the agent to verify. Repeatable |
 | `--redo` | Delete an existing study and start fresh. The old one is not kept |
 | `--sync-upstream` | Fast-forward the checkout onto the canonical remote. With an issue number it runs first; on its own, `vis-oss --sync-upstream` just syncs |

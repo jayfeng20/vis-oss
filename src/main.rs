@@ -55,11 +55,11 @@ struct Cli {
     /// Checkout to study. Defaults to the enclosing repository.
     #[arg(long, value_name = "REPO_PATH")]
     source: Option<PathBuf>,
-    /// How much of the examples the reader writes themselves.
+    /// How much of the example is written for you.
     ///
-    /// Defaults to `partial`: the agent does not run these files, so `none` would promise
-    /// complete working code that nobody has executed. Scaffolding it stands behind from
-    /// reading, with the interesting parts left to you, is what it can honestly deliver.
+    /// Defaults to `partial`: nothing here is executed, so `full` would promise complete
+    /// working code nobody has run. Scaffolding the agent stands behind from reading, with
+    /// the interesting parts left to you, is what it can honestly deliver.
     #[arg(long, value_enum, value_name = "LEVEL", default_value = "partial")]
     tutorial: Tutorial,
     /// Install the `/vis-oss` command for any agent CLI found under $HOME, then exit.
