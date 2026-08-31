@@ -173,31 +173,46 @@ That offer is the whole mechanism. The user knows what their machine and their a
 are worth; you do not. A study that arrives in minutes and offers to go further beats one
 that spent an hour deciding for them.
 
-### Probe the question the issue asks
+### Derive the probe from the issue's own words
 
-An example is not a tour of everything you learned. It exists to make the issue's own
-question concrete, and it is worth re-reading the issue and asking what would have to be
-true or false for it to be answered.
+The issue names the conditions it cares about, and those conditions *are* the probe. This
+is mechanical enough to do deliberately rather than by feel:
 
-Two failure modes, and the second is the expensive one:
+1. **List what the issue distinguishes.** Every clause saying behaviour should differ
+   between two situations is an axis.
+2. **Cross the axes.** The cases that fall out are rows of one probe, not a file each.
+3. **Measure what the issue measures.** If it names a quantity — a runtime, a row count, a
+   byte total — that quantity is the probe's output.
+4. **Stop there.** Everything else you learned belongs in the prose.
 
-- **Adjacent behaviour becomes extra files.** While reading you will find neighbouring
-  cases — a related warning that does fire, a second way to reach the same branch. Those
-  belong in the study's prose, where a sentence covers them. A probe each turns one
-  question into three, and the reader now has to work out which of the three is the issue.
-- **The question gets dodged.** If the issue asks *when is this slow enough to warn*, a
-  probe that shows the slow branch being taken has shown the setup and skipped the
-  question. Cost is the subject, so the probe has to make cost visible: two sizes, indexed
-  against unindexed, and a timing loop. Showing that both sizes take the same branch,
-  without timing either, answers a question nobody asked.
+Worked, on the issue these examples come from:
 
-The same holds in reverse. If the issue is about a wrong result, do not time anything —
-timing would be the tour. Match the probe to the claim being made.
+> *"show warnings if the index was not built for the column"* — index present or absent is
+> one axis.
+> *"doing so blindly makes it really annoying for smaller datasets that really don't need
+> an ANN index"* — small or large is the second.
+> *"if the runtime exceed a certain threshold to print the warning"* — runtime is what to
+> measure.
+
+Two axes crossed is four cases — small indexed, small flat, large indexed, large flat —
+each timed, printed as four rows of one table. In one place the reader sees both the case
+that ought to warn and the case that must stay silent, and that pair is the entire
+difficulty the issue is about. Note what follows: the probe builds indexes and writes a
+genuinely large dataset, because the axes demand it. Sizes are chosen so the difference is
+visible, not so the file is cheap — the reader is the one running it.
+
+What does not belong: that the same query also takes the flat path when the requested
+metric mismatches. True, found while reading, and worth one sentence in *What happens
+today*. Not a second probe — that turns one question into three and leaves the reader
+working out which one the issue was.
+
+The reverse holds too. If the issue is about a wrong result, do not time anything; timing
+would be the tour. Match the probe to the claim being made.
 
 An example that needs a hundred lines of harness before it reaches the project's API is
 teaching the harness. If capturing output or driving the API honestly takes that much,
-that is worth a sentence in *What I could not verify*, because it is something the next
-contributor will hit too.
+that is worth a sentence in *What I could not verify* — the next contributor will hit it
+too.
 
 ### Which files to create
 
@@ -207,7 +222,7 @@ every file must be recognisably one of these, numbered in the order it is run.
 | role | prefix | how many |
 |---|---|---|
 | **setup** — whatever must exist before anything can be observed: data written, a server started, a state reached | `00_` | at most one, and none if the project already ships what you need |
-| **probe** — one behaviour worth watching on its own, running against today's code | `01_`, `02_`, … | as many as there are genuinely separate behaviours — the same behaviour in two languages shares one number |
+| **probe** — the issue's question made runnable against today's code | `01_`, `02_`, … | as many as the issue asks separate questions, which is usually one. The cases it distinguishes are rows inside a probe, not files beside it; one probe in two languages shares one number |
 
 Check `test_data/`, `benchmarks/` and any datagen scripts before writing setup: reusing
 what the maintainers already ship makes your numbers comparable to theirs, and costs you

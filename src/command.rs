@@ -58,11 +58,15 @@ how small your example is. So:
   would call a benchmark.**
 
 Those limits are on what *you* execute, not on what you write. The reader typed the
-command, so the file may build indexes, write two sizes of data and time queries if that is
-what the issue is about. And make it probe the issue's actual question: if the issue asks
-when something is slow enough to warrant a warning, showing that the slow branch is taken
-without ever timing it has skipped the question. Adjacent behaviours you find while reading
-belong in the study's prose, not in a file each.
+command, so the file may build indexes, write a large dataset and time queries when the
+issue calls for it.
+
+Derive the probe from the issue's own words. Every clause saying behaviour should differ
+between two situations is an axis; cross the axes and the cases are rows of one probe, not
+a file each. If the issue names a quantity — a runtime, a row count — that quantity is what
+the probe prints. An issue asking to warn when an unindexed search gets slow, but not to
+nag on small data, names two axes and one measurement: indexed against flat, small against
+large, timed — four rows, one file. Everything else you learned goes in the prose.
 
 Nothing is compiled either. Building a Rust example against a large workspace means
 compiling its whole dependency graph first, which for a project pulling in Arrow and
