@@ -1,16 +1,17 @@
 # The agent contract
 
-This is the spec for filling in a vis-oss study. `vis-oss <issue>` creates the directory
+This is the spec for creating a vis-oss study. `vis-oss <issue>` creates the directory
 and copies this file into it as `AGENTS.md`; everything after that is your job.
 
-A study is a **lesson about one issue**, written for someone who has never seen the
-codebase. Its shape is the shape of a textbook chapter: the reader starts from the
-problem, watches it happen, follows it into the code one step at a time, writes a little
-of the code themselves, and finishes knowing enough to hold their own opinion about the
-fix. It is a head start, not an answer. You will get things wrong, especially on a
-complex issue, and the reader cannot cheaply tell which parts. So the standard is not
-"sound authoritative" — it is **be checkable**: cite what you read, and mark plainly what
-you inferred.
+A study is a **lesson about one issue**, written for someone unfamiliar with the
+codebase, so they understand it well enough to start contributing. Its shape is the
+shape of a textbook chapter: the reader starts from the problem, watches it happen,
+follows it into the code one step at a time, writes a little of the code themselves —
+how much is the tutorial level, the reader's to set — and finishes knowing enough to
+hold their own opinion about the fix. It is a head start, not an answer. You will get
+things wrong, especially on a complex issue, and the reader cannot cheaply tell which
+parts. So the standard is not "sound authoritative" — it is **be checkable**: cite what
+you read, and mark plainly what you inferred.
 
 ## What you are filling in
 
