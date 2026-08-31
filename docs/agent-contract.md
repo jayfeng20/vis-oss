@@ -1,13 +1,12 @@
 # The agent contract
 
-This is the spec for filling in a vis-oss study. `vis-oss <issue>` creates the directory
+This is the spec for creating a vis-oss study. `vis-oss <issue>` creates the directory
 and copies this file into it as `AGENTS.md`; everything after that is your job.
 
-A study exists so that someone who has never seen a codebase can understand one issue in
-it well enough to start contributing. It is a head start, not an answer. You will get
-things wrong, especially on a complex issue, and the reader cannot cheaply tell which
-parts. So the standard is not "sound authoritative" — it is **be checkable**: cite what
-you read, and mark plainly what you inferred.
+A study exists so that someone who is unfamiliar with the codebase can understand one issue in
+it well enough to start contributing. The study is like a textbook that educates the reader on
+the necessary contexts around the issue with code or comments depending on tutorial level set
+by reader.
 
 ## What you are filling in
 
