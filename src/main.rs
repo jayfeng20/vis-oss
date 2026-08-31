@@ -169,7 +169,7 @@ fn install_command() -> Result<()> {
         println!("installed {}", path.display());
     }
     println!();
-    println!("now: /vis-oss 804 in your agent, from inside the project's clone");
+    println!("now: /vis-oss <issue-number> in your agent, from inside the project's clone");
     Ok(())
 }
 
