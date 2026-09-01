@@ -57,7 +57,9 @@ small set of habits, all mechanical enough to demand:
   between a guided walk and a corridor of facts.
 - **The reader writes some of the code.** Understanding you typed outlasts understanding
   you read; that is why `partial` is the default level, and why the stubs are called
-  exercises. See *Exercises and the tutorial level*.
+  exercises. The gaps are chosen to hold the judgment calls — the decisions and domain
+  concepts that keep their value however cheap code generation gets. See *Exercises and
+  the tutorial level*.
 
 ## The sections
 
@@ -498,8 +500,18 @@ reading it, and `partial` is that principle applied to a probe.
 | `partial` | scaffolding complete; the parts worth thinking about are exercises, left as stubs. |
 | `none` | comments and `TODO`s. The reader writes every line, from your specification. |
 
-At `partial`, choosing what to stub is choosing what the lesson examines. Exercises come
-in two shapes, and a probe usually carries one of each:
+At `partial`, choosing what to stub is choosing what the reader will still know a year
+from now. **Stub the judgment, not the typing.** The typing is cheap — any agent
+produces a timing loop on request, and the reader knows it. What an exercise must leave
+behind is knowledge that keeps its value as code generation gets cheap: a decision made
+and defended (median over mean — why?), a domain concept understood (what an IVF
+partition is, why probing a few beats scanning all), a tradeoff the issue itself turns
+on. The test for a candidate gap: *would the reader still need what this teaches if an
+agent wrote all their code?* Judgment and the domain pass; an API's spelling does not —
+write that part out. The reader is here to stop being new to this codebase, not to
+practice typing.
+
+Exercises come in two shapes, and a probe usually carries one of each:
 
 - **Write the instrument** — a helper whose body *is* the concept the issue argues
   about: the timing helper in a study of slowness, the request counter in a study of

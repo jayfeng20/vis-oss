@@ -91,7 +91,9 @@ project.
 
 A study reads like a textbook chapter about one issue. `CONTEXT.md` walks you step by
 step from the behaviour — run this, you should see that — into the code that produces
-it, so by the end you know enough to hold your own opinion about the fix. The probes are
+it, so by the end you know enough to hold your own opinion about the fix. Its exercises
+deliberately reserve the judgment calls — the decisions, the tradeoffs, the domain
+concepts — for you: the study exists to grow a contributor, not to replace one. The probes are
 where the walkthrough touches ground: runnable files with comments naming the function
 or struct each call reaches and where it is declared, and an `AFTER` block saying what
 would differ once the issue is fixed. They never patch the project.
